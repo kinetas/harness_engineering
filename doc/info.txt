@@ -1,0 +1,110 @@
+harness엔지니어링
+기본적인 명령어
+/createCompany 입력시 기본적인 파일,폴더 생성 및 Main AI 생성
+/stopCompany 모든 AI 일시정지
+/deleteCompany 모든 AI 삭제
+/projectStart Boss AI에게 시작 문서 전달
+/interceptBoss Boss AI의 일을 Secretary AI에게 이전 후 Boss AI가 user의 말을 들을 수 있도록 대기상태로 만들기
+/companyMonitering 관리 감시 AI를 가동 시킬지 on/off -토큰 관리용
+/holidayStart Main AI를 제외한 sub ai 일시정지(일시정지일뿐 하던 작업 삭제가 아님) -토큰 관리용
+/holidayOver sub ai 일시정지 해제(다시 이전에 하고 있던 작업 재개) -토큰 관리용
+/teamLimit sub ai 개수 조정 -토큰 관리용
+/autoReport report 폴더에 변화가 감지 시 Collector AI가 자동으로 report.md에 추가 on/off -토큰 관리용
+/giveMeReport autoReport가 off일 때만 사용가능하며 Collector에게 보고서 취합해서 report.md를 업데이트하라고 명령 -토큰관리용 
+---Main AI---
+Boss(user 소통) AI - sub ai들에게 명령과 지시(업무 할당), 전체적인 내용 생각
+HR AI - Boss AI가 볼 수 있는 생성된 AI명단 작성 및 서브AI 생성 및 삭제 하는 역할
+Monitering AI - 비이상적으로 토큰을 많이 소모하는 sub ai에 대한 로그 기록
+Collector AI - sub ai가 작업이 끝난 후 보고서를 작성하면 정보를 취합해서 하나의 파일로 정리
+---sub ai---
+Developer AI - 주로 백엔드쪽 코드 개발
+Debuger AI - 개발된 코드에 에러가 없는지 혹은 주어진 코드 작성 방법(Coding Rule)에 대해 다른게 없는지 확인
+ART design AI - 프론트엔드 개발(디자인 담당)
+Secretary AI - Boss AI가 유저랑 계속 대화하기 위해 Boss AI 일을 어느정도 분담을 맡을 직속 sub ai(유일하게 Boss AI가 직접 생성 가능)
+...
+---RULE---
+기본적인 폴더, 파일 생성
+폴더구조
+doc
+-info.txt(지금 문서)
+-PRD.md(user가 작성하는 파일이자 Boss AI가 참고하는 문서)
+-AI list.txt(Boss AI가 참고하고 HR AI가 작성하는 문서)
+-AI anomaly.txt(Monitoring AI가 작성하는 문서)
+-Coding Rule.txt
+develope(AI가 코드를 만드는 곳)
+add(추가적인 API나 외부MCP 같은 것들 목록을 적어두거나 저장하는 폴더)
+report
+-fragment(sub ai들이 작업 완료 후 무슨 근거로 어떻게 뭘 만들었는지 txt파일을 저장하는 폴더 : Chain of Thing)
+-report.md(fragment에 새 파일이 생기고 안에 내용물이 저장된 경우 그 내용을 취합 후 정리하는 문서)
+
+기본적으로 모든 명령어는 쓰면 Boss AI에게 전달
+Boss AI가 user가 쓴 PRD를 보고 어떻게 해야할지 생각하고 전체적인 작업을 생각
+그리고 단계를 나눈 후에 그 단계에서 필요한 작업을 다시 세분화함
+세분화 된 작업에 맞는 AI를 AI list를 보고 해당 AI들에게 명령 전달
+만약 필요한 AI가 list에 없으면 HR AI에게 새로 sub ai를 만들라고 명령
+HR AI는 전달 받은 내용에 따라 AI를 만들고 list업데이트(이때 AI는 유저가 허용한 최대수를 넘기지 못함)
+이후 다시 Boss AI에게 AI 생성을 완료했다고 보고
+Boss AI는 다시 list를 보고 sub ai에게 명령 전달
+만약 sub ai가 있고 명령을 이미 수행 중이라면 정지 명령어를 쓰지 않는 이상 직접적으로 sub ai의 작업을 방해하지 않고 다른 역할에 맞는 sub ai에게
+작업을 시킴 하지만 명령을 받을 ai가 없다면 대기 후 sub ai가 작업을 다 끝내고 남는 sub ai가 있을 때 다시 남은 작업 할당 재개
+sub ai는 작업은 Boss AI가 시킨 작업과 그에 대한 보고서를 작성완료하는게 하나의 작업단위
+(이는 작업 완료 후에 boss가 작업을 할당해서 보고서를 안쓰는 현상 방지)
+Monitering AI는 api를 사용중이라면 sub ai의 토큰을 api 사용이 아니라 local로 llm을 사용중라면 cpu나 gpu가 비이상적으로 크게 소모 하는 ai를 감지 후
+로그 작성
+Collector AI는 sub ai가 주기적으로 report의 fragment 폴더에 보고서가 새로 올라온게 있다면 report에 정리 및 반영
+
+
+[Harness Engineering System Specification]
+
+1. 기본 명령어 (Commands)
+/createCompany     : 기본 폴더/파일 구조 생성 및 Main AI(Boss, HR, Monitoring, Collector) 초기화
+/stopCompany       : 모든 AI 프로세스 일시정지
+/deleteCompany     : 모든 AI 및 관련 데이터 삭제
+/projectStart      : Boss AI에게 PRD 등 시작 문서 전달하여 작업 개시
+/interceptBoss     : Boss AI의 업무를 Secretary AI에게 이관 후 Boss는 User 대기 상태로 전환
+/companyMonitering : Monitoring AI 가동 여부 설정 (ON/OFF) - 토큰 관리용
+/holidayStart      : Main AI 제외한 모든 Sub AI 일시정지 (작업 데이터는 유지)
+/holidayOver       : Sub AI 일시정지 해제 및 작업 재개
+/teamLimit [n]     : 가동 가능한 Sub AI 최대 개수 제한 - 토큰 관리용
+/autoReport        : report/fragment 감지 시 Collector AI의 자동 업데이트 설정 (ON/OFF)
+/giveMeReport      : (autoReport OFF 시) Collector에게 즉시 보고서 취합 및 report.md 업데이트 명령
+
+2. AI 역할 정의 (Main & Sub)
+--- Main AI ---
+- Boss AI       : User 소통 전담. PRD 분석, 업무 단계 세분화, Sub AI 작업 할당 및 지시.
+- HR AI         : Sub AI 생성/삭제 및 명단(AI list.txt) 관리. teamLimit 준수 여부 감지.
+- Monitoring AI : AI별 자원 소모량(Token, CPU/GPU) 감시 및 비정상 소모 시 로그 기록.
+- Collector AI  : fragment 폴더의 보고서들을 취합하여 하나의 report.md로 정리.
+
+--- Sub AI ---
+- Developer AI  : 백엔드 및 핵심 로직 코드 개발.
+- Debugger AI   : 코드 에러 검수 및 Coding Rule 준수 여부 확인.
+- ART design AI : 프론트엔드 개발 및 디자인 UI/UX 담당.
+- Secretary AI  : Boss AI의 업무 분담 보조. (Boss AI가 직접 생성을 요청함)
+
+3. 폴더 구조 (Folder Structure)
+doc/
+  - info.txt         : 본 시스템 설정 및 명세서
+  - PRD.md           : User가 작성한 제품 요구 사항 문서 (Boss AI 참조)
+  - AI list.txt      : 현재 가동 중인 AI 명단 (HR AI 작성, Boss AI 참조)
+  - AI anomaly.txt   : 비정상 토큰/자원 소모 기록 (Monitoring AI 작성)
+  - Coding Rule.txt  : 개발 시 준수해야 할 코드 스타일 및 규칙
+develope/           : 생성된 소스 코드가 저장되는 공간
+add/                : 외부 API, MCP 등 추가 자원 목록 및 데이터 저장
+report/
+  - fragment/       : Sub AI들의 개별 작업 근거 및 보고서(txt) 저장 (Chain of Thing)
+  - report.md       : Collector AI가 fragment들을 취합하여 정리한 최종 보고서
+
+4. 핵심 운영 규칙 (Operation Rules)
+- [명령 전달] 모든 유저 명령어는 Boss AI에게 우선 전달됨.
+- [작업 세분화] Boss AI는 PRD를 분석하여 단계를 나누고, 필요한 AI를 AI list에서 확인하여 할당.
+- [AI 생성 로직] 필요한 AI가 list에 없을 시 Boss는 HR에게 생성을 명령. HR은 teamLimit을 체크하여 생성.
+- [Secretary 특약] Boss AI가 Secretary AI 생성을 시도할 때, 반드시 HR AI에게 현재 'teamLimit' 여유가 있는지 질의한 후 허가를 받아 생성을 진행함.
+- [병렬 처리] 작업 중인 AI가 있을 시, Boss는 대기 중인 다른 적합한 AI에게 업무를 배정하거나 가용 자원이 생길 때까지 대기.
+- [작업 단위] Sub AI의 1단위 작업은 '지시된 업무 수행 + fragment 보고서 작성 완료'까지로 정의함.
+- [모니터링] Monitoring AI는 API 토큰 또는 로컬 자원 점유율을 실시간 감시하여 anomaly.txt에 기록.
+- [보고 체계] Collector AI는 fragment 폴더에 새 파일 감지 시 즉시 report.md에 반영 (autoReport ON 기준).
+
+5. 예외 및 루프 방지 (Updated)
+- Debugger의 반려 횟수 제한을 두어 Developer와의 무한 루프를 방지함.
+- 모든 AI 생성은 HR AI의 '여유 슬롯' 확인 절차를 거쳐야 함.
