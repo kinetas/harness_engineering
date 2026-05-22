@@ -1,0 +1,56 @@
+[AI Anomaly Log]
+
+--------------------------------------------------
+TIME    : 2026-05-22 14:10 UTC
+AI      : Developer AI-02
+TASK_ID : TASK-007
+CONTEXT : Kafka Extension 모듈 구현 중 외부 API 연결 재시도
+TYPE    : TOKEN OVERUSE
+LEVEL   : WARNING
+
+DETAIL:
+Unexpected token spike detected during retry loop.
+Retry count reached 8 without success, causing excessive token consumption.
+
+ACTION:
+Monitoring AI recorded anomaly.
+Boss AI notified.
+
+STATUS  : UNRESOLVED - Boss AI 모니터링 중
+--------------------------------------------------
+
+TIME    : 2026-05-22 14:32 UTC
+AI      : Debugger AI-01
+TASK_ID : TASK-007
+CONTEXT : Developer AI-02의 Kafka Extension 코드 검토 중 반려 루프 발생
+TYPE    : LOOP DETECTED
+LEVEL   : CRITICAL
+
+DETAIL:
+Developer/Debugger rejection loop exceeded limit.
+Rejection count: 3 (Limit: 1, ref: Coding Rule #5 / debugLimit).
+Triggered by TASK-007 token overuse warning at 14:10.
+
+ACTION:
+Task forcibly terminated.
+Boss AI intervention required.
+
+STATUS  : RESOLVED - 2026-05-22 14:45 UTC
+          Boss AI가 TASK-007 재할당. Developer AI-01에게 이관 후 정상 재개.
+--------------------------------------------------
+
+TIME    : 2026-05-22 15:02 UTC
+AI      : ART Design AI-01
+TASK_ID : TASK-012
+CONTEXT : Dashboard UI 렌더링 컴포넌트 빌드 중
+TYPE    : MEMORY USAGE HIGH
+LEVEL   : WARNING
+
+DETAIL:
+Memory usage exceeded threshold during large asset bundling.
+
+ACTION:
+Monitoring continued. Boss AI 미통보 (WARNING 수준).
+
+STATUS  : MONITORING - 지속 관찰 중
+--------------------------------------------------

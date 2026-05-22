@@ -1,0 +1,49 @@
+[Main AI]
+
+Boss AI
+- STATUS: ACTIVE
+- ROLE: User Communication / Task Distribution
+
+HR AI
+- STATUS: ACTIVE
+- ROLE: AI Lifecycle Management
+
+Monitoring AI
+- STATUS: ACTIVE
+- ROLE: Resource Monitoring
+
+Collector AI
+- STATUS: ACTIVE
+- ROLE: Report Collection
+
+--------------------------------------------------
+
+[Sub AI]
+
+Developer AI-01
+- STATUS   : WORKING
+- SPECIALTY: Backend, Kafka, API Integration, DB
+- CURRENT TASK: Kafka Extension (TASK-007 재할당)
+
+Debugger AI-01
+- STATUS   : WAITING
+- SPECIALTY: Static Analysis, Coding Rule 검사, Error Detection
+- CURRENT TASK: Review Queue
+
+ART Design AI-01
+- STATUS   : WORKING
+- SPECIALTY: Frontend, UI/UX, React, CSS, Responsive Design
+- CURRENT TASK: Dashboard UI (TASK-012)
+
+Secretary AI-01
+- STATUS   : IDLE
+- SPECIALTY: Task Delegation, Boss AI 보조, 문서 정리
+- CURRENT TASK: None
+
+--------------------------------------------------
+
+[Team Status]
+
+Current Active Sub AI : 4
+Team Limit            : 8
+Available Slot        : 4
