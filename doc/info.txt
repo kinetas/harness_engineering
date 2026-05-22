@@ -12,8 +12,8 @@
 /teamLimit [n]     : 가동 가능한 Sub AI 최대 개수 제한 - 토큰 관리용
 /autoReport        : report/fragment 감지 시 Collector AI의 자동 업데이트 설정 (ON/OFF)
 /giveMeReport      : (autoReport OFF 시) Collector에게 즉시 보고서 취합 및 report.md 업데이트 명령
-/debugLimit        : Debugger의 반려 수 제한 default 1회
-/adjustCodingRule  : Debugger AI가 코드들이 Coding_Rule.txt에 맞게 썼는지 검사시키는 명령어
+/debugLimit [n]        : Debugger의 반려 수 제한 default 1회
+/adjustCodingRule [file]  : Debugger AI가 코드들이 Coding_Rule.txt에 맞게 썼는지 검사시키는 명령어
 
 2. AI 역할 정의 (Main & Sub)
 --- Main AI ---
