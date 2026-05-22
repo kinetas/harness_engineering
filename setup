@@ -1,0 +1,64 @@
+#!/bin/bash
+# Harness Engineering - Setup Script
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ORIGINAL_DIR="$(pwd)"
+CLAUDE_MD="$HOME/.claude/CLAUDE.md"
+
+SKILLS_SECTION='
+## harness-engineering
+
+Use the Harness Engineering skill set for all multi-agent development workflows.
+
+Available skills:
+/createCompany, /startCompany, /stopCompany, /deleteCompany,
+/projectStart, /interceptBoss, /companyMonitering,
+/holidayStart, /holidayOver, /teamLimit,
+/autoReport, /giveMeReport, /debugLimit, /adjustCodingRule
+'
+
+echo ""
+echo "=================================="
+echo "  Harness Engineering Setup"
+echo "=================================="
+echo ""
+
+# ~/.claude/CLAUDE.md 에 섹션 추가
+if [ ! -f "$CLAUDE_MD" ]; then
+    touch "$CLAUDE_MD"
+fi
+
+if grep -q "harness-engineering" "$CLAUDE_MD"; then
+    echo "[!] CLAUDE.md 에 이미 harness-engineering 섹션이 있습니다. 건너뜁니다."
+else
+    echo "$SKILLS_SECTION" >> "$CLAUDE_MD"
+    echo "[+] ~/.claude/CLAUDE.md 에 harness-engineering 섹션 추가 완료."
+fi
+
+echo ""
+
+# 현재 프로젝트 CLAUDE.md에도 추가할지 질문
+read -p "현재 프로젝트에도 추가할까요? 팀원들도 스킬을 사용할 수 있게 됩니다. (y/n): " answer
+if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+    PROJECT_CLAUDE_MD="$ORIGINAL_DIR/CLAUDE.md"
+    if [ ! -f "$PROJECT_CLAUDE_MD" ]; then
+        touch "$PROJECT_CLAUDE_MD"
+    fi
+    if grep -q "harness-engineering" "$PROJECT_CLAUDE_MD"; then
+        echo "[!] 프로젝트 CLAUDE.md 에 이미 섹션이 있습니다."
+    else
+        echo "$SKILLS_SECTION" >> "$PROJECT_CLAUDE_MD"
+        echo "[+] $(pwd)/CLAUDE.md 에 harness-engineering 섹션 추가 완료."
+    fi
+fi
+
+echo ""
+echo "=================================="
+echo "[+] 설정 완료! Claude Code를 재시작하세요."
+echo ""
+echo "시작하기:"
+echo "  /createCompany  - 폴더/파일 구조 생성"
+echo "  /startCompany   - Main AI 초기화"
+echo "  /projectStart   - 프로젝트 시작"
+echo "=================================="
+echo ""

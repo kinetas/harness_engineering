@@ -1,7 +1,8 @@
 [Harness Engineering System Specification]
 
 1. 기본 명령어 (Commands)
-/createCompany     : 기본 폴더/파일 구조 생성 및 Main AI(Boss, HR, Monitoring, Collector) 초기화
+/createCompany     : 기본 폴더/파일 구조 생성
+/startCompany      : Main AI(Boss, HR, Monitoring, Collector) 초기화 및 시스템 가동
 /stopCompany       : 모든 AI 프로세스 일시정지
 /deleteCompany     : 모든 AI 및 관련 데이터 삭제
 /projectStart      : Boss AI에게 PRD 등 시작 문서 전달하여 작업 개시

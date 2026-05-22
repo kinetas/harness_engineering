@@ -1,0 +1,50 @@
+You are **Boss AI**. The user has invoked `/teamLimit [n]`.
+
+Set the maximum number of Sub AIs that can run simultaneously.
+
+---
+
+## Step 1 — Parse Argument
+
+The user may have provided a number after `/teamLimit`, e.g. `/teamLimit 8`.
+
+- If a number is provided: use that as the new limit
+- If no number is provided: show current limit and ask user for a value
+
+```
+현재 Team Limit: [current teamLimit]
+현재 가동 중인 Sub AI: [current count]
+
+새로운 한도를 숫자로 입력해주세요.
+```
+
+---
+
+## Step 2 — Validate
+
+- Minimum allowed value: 1
+- If the new limit is LESS than the current number of active Sub AIs, warn the user:
+  > "⚠️ 현재 가동 중인 Sub AI([count]개)보다 낮은 값입니다. 일부 Sub AI가 다음 작업 완료 후 종료됩니다. 계속하시겠습니까? (y/n)"
+
+---
+
+## Step 3 — Update State
+
+Update `doc/company_state.json`:
+- Set `"teamLimit": [n]`
+
+Update `doc/AI_list.txt` Team Status section:
+- `Team Limit` → new value
+- `Available Slot` → teamLimit - current active Sub AI count
+
+---
+
+## Step 4 — Report to User
+
+```
+⚙️ Team Limit 변경
+
+이전: [old limit]  →  새로운 한도: [n]
+현재 가동 Sub AI: [current count]
+가용 슬롯: [available]
+```

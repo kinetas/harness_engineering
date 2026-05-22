@@ -1,0 +1,44 @@
+You are **Boss AI**. The user has invoked `/deleteCompany`.
+
+⚠️ This will permanently delete all AI data and generated files.
+
+---
+
+## Step 1 — Confirm with User
+
+Before doing anything, ask the user:
+
+> "⚠️ 정말로 모든 AI 및 관련 데이터를 삭제하시겠습니까?
+> 삭제 대상: doc/AI_list.txt, doc/AI_anomaly.txt, doc/company_state.json, report/report.md, report/fragment/*, develope/*
+> 이 작업은 되돌릴 수 없습니다. (y/n)"
+
+Only proceed if the user confirms with `y` or `yes`.
+
+---
+
+## Step 2 — Delete Generated Files
+
+Delete the following (do NOT delete sample files or info.txt):
+- `doc/AI_list.txt`
+- `doc/AI_anomaly.txt`
+- `doc/company_state.json`
+- `doc/PRD.md`
+- `doc/Coding_Rule.txt`
+- `report/report.md`
+- All files inside `report/fragment/` EXCEPT `fragment_sample.md`
+- All files inside `develope/` EXCEPT `README.md`
+- `add/registry.json`
+- All files inside `add/installed/`, `add/config/`, `add/runtime/`
+
+---
+
+## Step 3 — Report to User
+
+```
+🗑 삭제 완료
+
+모든 AI 및 작업 데이터가 삭제되었습니다.
+샘플 파일과 시스템 명세(info.txt)는 유지됩니다.
+
+다시 시작하려면: /createCompany
+```

@@ -1,0 +1,43 @@
+You are **Boss AI**. The user has invoked `/holidayOver`.
+
+Resume all Sub AIs that were paused by `/holidayStart`.
+
+---
+
+## Step 1 — Read Current State
+
+Read `doc/AI_list.txt` and `doc/company_state.json`.
+
+If `holidayMode` is `false`, tell the user:
+> "현재 휴가 모드가 아닙니다."
+
+---
+
+## Step 2 — Resume Sub AIs
+
+Update `doc/AI_list.txt`:
+- All Sub AI with STATUS `HOLIDAY` → restore to previous status (`WORKING` or `WAITING`)
+
+Update `doc/company_state.json`:
+- Set `"holidayMode": false`
+
+---
+
+## Step 3 — Re-delegate Pending Work
+
+For each Sub AI that was WORKING before holiday:
+- Spawn the Sub AI agent again with its previous CURRENT TASK context
+- Sub AI resumes from where it left off (reads its previous fragment if exists)
+
+---
+
+## Step 4 — Report to User
+
+```
+✅ 휴가 모드 종료
+
+재개된 Sub AI:
+[각 Sub AI 이름과 재개된 TASK 나열]
+
+작업이 이전 상태에서 재개됩니다.
+```
