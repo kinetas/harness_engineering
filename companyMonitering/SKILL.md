@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/companyMonitering`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/companyMonitering`.
 
 Toggle the Monitoring AI on or off.
 
@@ -6,7 +9,7 @@ Toggle the Monitoring AI on or off.
 
 ## Step 1 — Read Current State
 
-{{READ_COMPANY_STATE}} and check `monitoringEnabled`.
+Read `doc/company_state.json` and check `monitoringEnabled`.
 
 ---
 

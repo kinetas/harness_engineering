@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/autoReport`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/autoReport`.
 
 Toggle automatic report collection by Collector AI.
 
@@ -6,7 +9,7 @@ Toggle automatic report collection by Collector AI.
 
 ## Step 1 — Read Current State
 
-{{READ_COMPANY_STATE}} and check `autoReport`.
+Read `doc/company_state.json` and check `autoReport`.
 
 ---
 

@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/teamLimit [n]`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/teamLimit [n]`.
 
 Set the maximum number of Sub AIs that can run simultaneously.
 

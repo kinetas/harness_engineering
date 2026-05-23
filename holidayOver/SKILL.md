@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/holidayOver`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/holidayOver`.
 
 Resume all Sub AIs that were paused by `/holidayStart`.
 
@@ -6,7 +9,7 @@ Resume all Sub AIs that were paused by `/holidayStart`.
 
 ## Step 1 — Read Current State
 
-{{READ_STATE}}.
+Read `doc/AI_list.txt` and `doc/company_state.json`.
 
 If `holidayMode` is `false`, tell the user:
 > "현재 휴가 모드가 아닙니다."

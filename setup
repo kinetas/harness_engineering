@@ -1,9 +1,27 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Harness Engineering - Setup Script
+set -e
 
-SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
 ORIGINAL_DIR="$(pwd)"
+CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
+
+IS_WINDOWS=0
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*|Windows_NT) IS_WINDOWS=1 ;;
+esac
+
+_link_or_copy() {
+  local src="$1"
+  local dst="$2"
+  if [ "$IS_WINDOWS" -eq 1 ]; then
+    rm -rf "$dst"
+    cp -f "$src" "$dst"
+  else
+    ln -snf "$src" "$dst"
+  fi
+}
 
 SKILLS_SECTION='
 ## harness-engineering
@@ -23,16 +41,36 @@ echo "  Harness Engineering Setup"
 echo "=================================="
 echo ""
 
+# SKILL.md.tmpl → SKILL.md 빌드 (fragment 치환)
+echo "[*] 스킬 파일 빌드 중..."
+node "$SKILL_DIR/build.js" --quiet
+echo "[+] 빌드 완료."
+echo ""
+
+# ~/.claude/skills/ 폴더 생성
+mkdir -p "$CLAUDE_SKILLS_DIR"
+
+# 각 스킬 폴더의 SKILL.md를 ~/.claude/skills/[skill-name]/SKILL.md 로 심볼릭 링크
+echo "[*] 스킬 등록 중..."
+for skill_path in "$SKILL_DIR"/*/SKILL.md; do
+  skill_name="$(basename "$(dirname "$skill_path")")"
+  target_dir="$CLAUDE_SKILLS_DIR/$skill_name"
+  mkdir -p "$target_dir"
+  _link_or_copy "$skill_path" "$target_dir/SKILL.md"
+  echo "    ✅ /$skill_name"
+done
+echo ""
+
 # ~/.claude/CLAUDE.md 에 섹션 추가
 if [ ! -f "$CLAUDE_MD" ]; then
-    touch "$CLAUDE_MD"
+  touch "$CLAUDE_MD"
 fi
 
 if grep -q "harness-engineering" "$CLAUDE_MD"; then
-    echo "[!] CLAUDE.md 에 이미 harness-engineering 섹션이 있습니다. 건너뜁니다."
+  echo "[!] CLAUDE.md 에 이미 harness-engineering 섹션이 있습니다. 건너뜁니다."
 else
-    echo "$SKILLS_SECTION" >> "$CLAUDE_MD"
-    echo "[+] ~/.claude/CLAUDE.md 에 harness-engineering 섹션 추가 완료."
+  echo "$SKILLS_SECTION" >> "$CLAUDE_MD"
+  echo "[+] ~/.claude/CLAUDE.md 에 harness-engineering 섹션 추가 완료."
 fi
 
 echo ""
@@ -40,16 +78,16 @@ echo ""
 # 현재 프로젝트 CLAUDE.md에도 추가할지 질문
 read -p "현재 프로젝트에도 추가할까요? 팀원들도 스킬을 사용할 수 있게 됩니다. (y/n): " answer
 if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-    PROJECT_CLAUDE_MD="$ORIGINAL_DIR/CLAUDE.md"
-    if [ ! -f "$PROJECT_CLAUDE_MD" ]; then
-        touch "$PROJECT_CLAUDE_MD"
-    fi
-    if grep -q "harness-engineering" "$PROJECT_CLAUDE_MD"; then
-        echo "[!] 프로젝트 CLAUDE.md 에 이미 섹션이 있습니다."
-    else
-        echo "$SKILLS_SECTION" >> "$PROJECT_CLAUDE_MD"
-        echo "[+] $(pwd)/CLAUDE.md 에 harness-engineering 섹션 추가 완료."
-    fi
+  PROJECT_CLAUDE_MD="$ORIGINAL_DIR/CLAUDE.md"
+  if [ ! -f "$PROJECT_CLAUDE_MD" ]; then
+    touch "$PROJECT_CLAUDE_MD"
+  fi
+  if grep -q "harness-engineering" "$PROJECT_CLAUDE_MD"; then
+    echo "[!] 프로젝트 CLAUDE.md 에 이미 섹션이 있습니다."
+  else
+    echo "$SKILLS_SECTION" >> "$PROJECT_CLAUDE_MD"
+    echo "[+] $PROJECT_CLAUDE_MD 에 harness-engineering 섹션 추가 완료."
+  fi
 fi
 
 echo ""

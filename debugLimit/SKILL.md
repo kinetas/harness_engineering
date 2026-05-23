@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/debugLimit [n]`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/debugLimit [n]`.
 
 Set the maximum number of times Debugger AI can reject a Developer AI's work before the loop is forcibly broken.
 

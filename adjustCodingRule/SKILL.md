@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/adjustCodingRule [file]`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/adjustCodingRule [file]`.
 
 Instruct Debugger AI to check code against Coding_Rule.txt.
 

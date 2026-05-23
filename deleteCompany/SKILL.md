@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/deleteCompany`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/deleteCompany`.
 
 ⚠️ This will permanently delete all AI data and generated files.
 

@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/giveMeReport`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/giveMeReport`.
 
 Immediately trigger Collector AI to gather all fragment reports and update report.md.
 
@@ -6,7 +9,7 @@ Immediately trigger Collector AI to gather all fragment reports and update repor
 
 ## Step 1 — Check autoReport State
 
-{{READ_COMPANY_STATE}}.
+Read `doc/company_state.json`.
 
 If `autoReport` is `true`, warn the user:
 > "Auto Report가 이미 활성화되어 있습니다. 수동 취합을 진행할까요? (y/n)"

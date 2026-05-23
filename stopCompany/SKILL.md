@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/stopCompany`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/stopCompany`.
 
 Pause all AI operations immediately.
 
@@ -6,7 +9,7 @@ Pause all AI operations immediately.
 
 ## Step 1 — Read Current State
 
-{{READ_STATE}}.
+Read `doc/AI_list.txt` and `doc/company_state.json`.
 
 ---
 

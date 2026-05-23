@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/holidayStart`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/holidayStart`.
 
 Pause all Sub AI. Main AI remain on standby. Work data is preserved.
 
@@ -6,7 +9,7 @@ Pause all Sub AI. Main AI remain on standby. Work data is preserved.
 
 ## Step 1 — Read Current State
 
-{{READ_STATE}}.
+Read `doc/AI_list.txt` and `doc/company_state.json`.
 
 ---
 

@@ -1,4 +1,7 @@
-{{ROLE}} The user has invoked `/interceptBoss`.
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/interceptBoss`.
 
 Hand off your current work to Secretary AI and enter user-listening standby mode.
 
@@ -6,7 +9,7 @@ Hand off your current work to Secretary AI and enter user-listening standby mode
 
 ## Step 1 — Check Secretary AI Availability
 
-{{READ_STATE}}.
+Read `doc/AI_list.txt` and `doc/company_state.json`.
 
 Check if `Secretary AI` exists in the Sub AI list.
 
