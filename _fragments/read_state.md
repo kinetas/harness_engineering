@@ -1,0 +1,1 @@
+Read `doc/AI_list.txt` and `doc/company_state.json`
