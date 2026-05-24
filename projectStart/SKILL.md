@@ -41,54 +41,57 @@ TASK-XXX | 작업 설명 | 담당 AI 역할 | 선행 TASK
 
 ---
 
-## Step 3 — Check AI List & Request HR AI if Needed
+## Step 3 — Assign Tasks via HR AI
 
-Read `doc/AI_list.txt`.
+For each task in the plan, request HR AI to handle the assignment.
+Tasks without dependencies can be assigned in parallel.
 
-For each required AI role not currently in the Sub AI list:
-1. Spawn an **HR AI agent** with the following instruction:
+Spawn an **HR AI agent** for each task (or batch of independent tasks) with the following instruction:
 
-> "HR AI: 다음 역할의 Sub AI를 생성하고 doc/AI_list.txt를 업데이트하라.
-> 역할: [ROLE_NAME]
-> 현재 팀 제한: [teamLimit] / 현재 가동 Sub AI 수: [current_count]
-> 여유 슬롯이 있는 경우에만 생성할 것. 생성 완료 후 Boss AI에게 보고."
-
-HR AI must:
-- Check `doc/company_state.json` for `teamLimit`
-- Count current Sub AI in `doc/AI_list.txt`
-- If slot available: add the new Sub AI entry to `doc/AI_list.txt`, then report back
-- If no slot: report that limit is reached
-
----
-
-## Step 4 — Delegate Tasks to Sub AIs
-
-After HR AI confirms Sub AI creation, spawn Sub AI agents in parallel where dependencies allow.
-
-For each Sub AI agent, provide:
-- TASK ID
-- Assigned work description
-- Reference to `doc/Coding_Rule.txt`
-- Instruction to write a fragment report to `report/fragment/TASK-XXX_[ai-name].txt` upon completion
+> "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
+>
+> 태스크: [TASK-XXX] — [작업 설명]
+> 필요 역량: [required specialty, e.g. Backend / Frontend / DB]
+>
+> 배정 절차:
+> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
+> 2. 있으면: 해당 Sub AI의 STATUS를 WORKING으로, CURRENT TASK를 '[TASK-XXX] [작업 설명]'으로 업데이트하고 Sub AI를 spawn하라.
+> 3. 없으면: 새 슬롯이 있는지 확인하라. (`doc/company_state.json`의 teamLimit 기준)
+>    - 슬롯 있음: 새 Sub AI 항목을 `doc/AI_list.txt`에 추가(STATUS: WORKING, CURRENT TASK 기록)하고 spawn하라.
+>    - 슬롯 없음: Boss AI에게 '슬롯 부족 — [TASK-XXX] 대기 중' 보고.
+>
+> Sub AI 작업 완료 시 HR AI는 반드시:
+> - 해당 Sub AI의 STATUS를 IDLE로 변경
+> - CURRENT TASK를 None으로 변경
+> - Team Status의 숫자를 재계산하여 업데이트
+> - Boss AI에게 완료 보고
+>
+> Boss AI는 직접 `doc/AI_list.txt`를 수정하지 않는다. 모든 AI 명단 변경은 HR AI만 수행한다."
 
 Sub AI must follow this work cycle:
 1. 지시된 작업 수행
 2. `develope/` 에 코드 작성
-3. `report/fragment/TASK-XXX_[ai-name].txt` 보고서 작성
-4. Boss AI에게 완료 보고
+3. `report/fragment/TASK-XXX_[ai-name].md` 보고서 작성
+4. HR AI에게 완료 보고 → HR AI가 명단 업데이트 후 Boss AI에게 전달
 
 ---
 
-## Step 5 — Update report.md
+## Step 4 — Request Collector AI to Update Report
 
-After delegating all tasks, update `report/report.md`:
-- Current Working Tasks 테이블 업데이트
-- Project Status 업데이트
-- AI Activity Summary 업데이트
+After all tasks are delegated, spawn **Collector AI** with the following instruction:
+
+> "Collector AI: 프로젝트가 시작되었다. `report/report.md` 를 현재 상태로 업데이트하라.
+> 반영할 내용:
+> - Current Working Tasks: [task list with assigned AI]
+> - Project Status: 진행 중으로 업데이트
+> - AI Activity Summary: HR AI가 배정한 AI 목록 반영
+>
+> `doc/AI_list.txt` 를 읽어 최신 AI 현황을 반영하라.
+> Boss AI는 report.md를 직접 수정하지 않는다."
 
 ---
 
-## Step 6 — Report to User
+## Step 5 — Report to User
 
 Tell the user:
 ```
