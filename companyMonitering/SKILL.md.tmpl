@@ -1,11 +1,16 @@
 ---
 name: companyMonitering
-description: Monitoring AI 토글 — Sub AI의 자원 소모 감시를 켜거나 끕니다.
+description: Monitoring AI 토글 — 태스크 완료 시 자원 소모 점검을 켜거나 끕니다.
 ---
 
 {{ROLE}} The user has invoked `/companyMonitering`.
 
 Toggle the Monitoring AI on or off.
+
+Monitoring AI는 실시간으로 상시 가동되지 않는다.
+Sub AI 태스크가 완료될 때마다 Boss AI가 spawn하여 fragment 보고서를 분석하고,
+이상 패턴 감지 시 `doc/AI_anomaly.txt` 에 기록한다.
+이 토글은 해당 spawn 동작 자체를 활성화/비활성화한다.
 
 ---
 
@@ -34,7 +39,8 @@ If turned ON:
 ```
 📡 Monitoring AI 활성화
 
-Sub AI의 토큰 및 자원 소모를 실시간 감시합니다.
+태스크 완료 시마다 자원 소모를 점검합니다.
+점검 항목: 토큰 소모량, 오류 반복, 작업 범위 초과
 이상 감지 시 doc/AI_anomaly.txt에 기록됩니다.
 ```
 
@@ -42,6 +48,6 @@ If turned OFF:
 ```
 📴 Monitoring AI 비활성화
 
-자원 감시가 중단되었습니다. (토큰 절약 모드)
-이상 감지가 필요하면 /companyMonitering 으로 다시 활성화하세요.
+태스크 완료 후 자원 점검이 생략됩니다. (토큰 절약 모드)
+다시 활성화하려면 /companyMonitering 을 입력하세요.
 ```

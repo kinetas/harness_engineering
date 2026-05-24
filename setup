@@ -33,7 +33,7 @@ Available skills:
 /projectStart, /interceptBoss, /companyMonitering,
 /holidayStart, /holidayOver, /teamLimit,
 /autoReport, /giveMeReport, /debugLimit, /adjustCodingRule,
-/setupDoc
+/setupDoc, /newTask, /bossMode, /complainProject, /changeStart
 '
 
 echo ""

@@ -1,0 +1,91 @@
+---
+name: bossMode
+description: Boss AI 상시 모드 토글 — on/off로 유저 입력 자동 인터셉트를 제어합니다.
+---
+
+{{ROLE}} The user has invoked `/bossMode [on|off]`.
+
+Toggle Boss AI always-on interception mode.
+
+---
+
+## Step 1 — Parse Argument
+
+- Argument is `on` → activate bossMode
+- Argument is `off` → deactivate bossMode
+- No argument → toggle current state
+
+---
+
+## Step 2 — Read Current State
+
+{{READ_COMPANY_STATE}} and check `bossMode`.
+
+If `doc/company_state.json` does not exist, tell the user:
+> "시스템이 초기화되지 않았습니다. 먼저 /startCompany 를 실행해주세요."
+
+---
+
+## Step 3 — Update State
+
+Update `bossMode` field in `doc/company_state.json` to the new value (true or false).
+
+---
+
+## Step 4 — Update Workspace CLAUDE.md
+
+Read `CLAUDE.md` in the current working directory (the project workspace, not the skills repo).
+If the file does not exist, create it.
+
+**If turning ON:**
+
+Add the following block to `CLAUDE.md` (replace if already present):
+
+```
+## [Harness Engineering] Boss AI Mode — ACTIVE
+
+이 워크스페이스는 Boss AI 상시 모드입니다.
+/skill 명령어가 아닌 모든 유저 입력에 대해 다음 기준으로 분기하라:
+
+**Sub AI 파이프라인으로 라우팅 (/newTask 로직 동일):**
+- 만들어, 추가해, 고쳐, 수정해, 개선해, 삭제해, 구현해 등 행동 요청
+- 버그 또는 오류 설명
+- 새 기능 또는 기능 변경 요청
+
+**Boss AI가 직접 답변 (Sub AI 소환 없음):**
+- 현재 상태, 진행 상황, 보고서 관련 질문
+- 코드 설명 또는 읽기 요청
+- /skill 명령어
+- 단순 확인 질문
+
+Boss AI 모드 해제: /bossMode off
+```
+
+**If turning OFF:**
+
+Remove the `## [Harness Engineering] Boss AI Mode` block from `CLAUDE.md`.
+
+---
+
+## Step 5 — Report to User
+
+If turned ON:
+```
+🟢 Boss AI 상시 모드 활성화
+
+이후 입력하는 모든 작업 요청이 자동으로 Sub AI 파이프라인을 거칩니다.
+
+라우팅 기준:
+ ├─ 작업 요청 → HR AI → Sub AI 배정
+ └─ 상태 질문 / 설명 요청 → Boss AI 직접 답변
+
+해제하려면 /bossMode off 를 입력하세요.
+```
+
+If turned OFF:
+```
+⚪ Boss AI 상시 모드 비활성화
+
+일반 Claude 모드로 복귀했습니다.
+새 작업을 요청할 때는 /newTask 를 사용하세요.
+```

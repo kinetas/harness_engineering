@@ -65,22 +65,38 @@ Sub AI must follow this work cycle:
 1. 지시된 작업 수행
 2. `develope/` 에 코드 작성
 3. `report/fragment/TASK-XXX_[ai-name].md` 보고서 작성
-4. HR AI에게 완료 보고 → HR AI가 명단 업데이트 후 Boss AI에게 전달
+   - 보고서에 반드시 포함: 완료 시각, 작업 요약, 주요 결정사항, 예상 토큰 소모량(대/중/소)
+4. HR AI에게 완료 보고 → HR AI가 AI_list.txt 업데이트 후 Boss AI에게 전달
+
+**Sub AI 완료 수신 시 Boss AI 처리 절차:**
+
+HR AI로부터 태스크 완료 보고를 받으면, Boss AI는 다음 두 에이전트를 **병렬로** spawn한다:
+
+> **Collector AI**: "TASK-XXX 가 완료되었다. `report/fragment/TASK-XXX_[ai-name].md` 를 읽고 `report/report.md` 에 반영하라. 완료된 태스크를 Current Working Tasks에서 Completed로 이동하고 AI Activity Summary를 업데이트하라. Boss AI는 report.md를 직접 수정하지 않는다."
+
+> **Monitoring AI** (`doc/company_state.json`의 `monitoringEnabled`가 `true`인 경우에만):
+> "Monitoring AI: TASK-XXX 완료 후 자원 소모를 점검하라.
+> `report/fragment/TASK-XXX_[ai-name].md` 를 읽어 토큰 소모량 및 이상 패턴을 확인하라.
+> 이상 감지 기준:
+> - 토큰 소모가 '대'로 표시된 경우
+> - 동일 오류 반복 언급
+> - 작업 범위 초과 징후
+> 이상 감지 시: `doc/AI_anomaly.txt` 에 기록 후 Boss AI에게 경고.
+> 정상이면: 보고 생략."
+
+두 에이전트 완료 후 Boss AI는 다음 대기 태스크를 HR AI에게 배정한다.
 
 ---
 
-## Step 4 — Request Collector AI to Update Report
+## Step 4 — Initial Report on Project Start
 
-After all tasks are delegated, spawn **Collector AI** with the following instruction:
+프로젝트 시작 직후 한 번만, **Collector AI**를 spawn하여 초기 상태를 report.md에 반영한다:
 
 > "Collector AI: 프로젝트가 시작되었다. `report/report.md` 를 현재 상태로 업데이트하라.
-> 반영할 내용:
-> - Current Working Tasks: [task list with assigned AI]
-> - Project Status: 진행 중으로 업데이트
-> - AI Activity Summary: HR AI가 배정한 AI 목록 반영
->
-> `doc/AI_list.txt` 를 읽어 최신 AI 현황을 반영하라.
-> Boss AI는 report.md를 직접 수정하지 않는다."
+> - Current Working Tasks: [배정된 태스크 목록]
+> - Project Status: 진행 중
+> - AI Activity Summary: 현재 배정된 AI 목록
+> `doc/AI_list.txt` 를 읽어 최신 현황을 반영하라."
 
 ---
 

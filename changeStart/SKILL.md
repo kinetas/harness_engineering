@@ -1,0 +1,101 @@
+---
+name: changeStart
+description: 변경 개발 시작 — CHANGE_REQUEST.md를 분석하여 변경 범위 내 태스크를 계획하고 Sub AI에게 위임합니다.
+---
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: node build.js -->
+
+You are **Boss AI**. The user has invoked `/changeStart`.
+
+Read the change request document, plan tasks scoped to the changes only, and delegate to Sub AIs through HR AI.
+
+---
+
+## Step 1 — Read Context
+
+Read the following files:
+- `doc/CHANGE_REQUEST.md` — 변경 요청 내용 (필수)
+- `doc/PRD.md` — 업데이트된 요구사항
+- `doc/AI_list.txt` — 현재 AI 현황
+- `doc/company_state.json` — 시스템 상태
+- `report/report.md` — 현재 진행 상황 및 완료된 작업
+
+If `doc/CHANGE_REQUEST.md` does not exist, stop and tell the user:
+> "변경 요청 문서가 없습니다. 먼저 /complainProject 를 실행해주세요."
+
+---
+
+## Step 2 — Analyze Change Request
+
+As Boss AI, analyze CHANGE_REQUEST.md and produce:
+
+1. **Change Summary** — 한 문단 요약
+2. **Impact Analysis** — 기존 코드(`develope/`) 중 영향받는 파일/모듈 목록
+3. **Task Breakdown** — 변경 범위 내 작업 목록 (TASK-XXX 형식, taskCounter 이어서 부여)
+4. **Dependency Map** — 변경 태스크 간 선후 관계
+5. **AI Assignment Plan** — 각 태스크에 필요한 Sub AI 역량
+
+Use this format for each task:
+```
+TASK-XXX | 변경 유형(fix/feature/improvement/refactor) | 작업 설명 | 담당 AI 역량 | 선행 TASK
+```
+
+**중요**: 변경 요청에 명시된 Out of Scope 항목은 태스크에 포함하지 않는다.
+기존에 완료된 작업(`report/report.md` 기준)은 중복 실행하지 않는다.
+
+After analysis, update `taskCounter` in `doc/company_state.json`.
+
+---
+
+## Step 3 — Assign Tasks via HR AI
+
+For each task, spawn an **HR AI agent**:
+
+> "HR AI: 다음 변경 태스크를 처리할 Sub AI를 배정하라.
+>
+> 태스크: [TASK-XXX] — [변경 유형] [작업 설명]
+> 영향 파일: [affected files/modules]
+> 필요 역량: [required specialty]
+>
+> 배정 절차:
+> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
+> 2. 있으면: STATUS를 WORKING으로, CURRENT TASK를 업데이트하고 Sub AI를 spawn하라.
+> 3. 없으면: 슬롯 확인 후 생성 또는 '슬롯 부족' 보고.
+>
+> Sub AI 작업 지침:
+> - 기존 코드를 먼저 읽고 변경 범위를 파악한 후 작업할 것.
+> - 변경 요청 외 코드를 임의로 수정하지 말 것.
+> - `report/fragment/TASK-XXX_[ai-name].md` 보고서 작성 (완료 시각, 변경 내역, 영향받은 파일 목록, 예상 토큰 소모량 포함)
+> - HR AI에게 완료 보고.
+>
+> Sub AI 완료 시:
+> - HR AI: AI_list.txt IDLE 업데이트 → Boss AI 전달
+> - Boss AI: Collector AI + Monitoring AI 병렬 spawn"
+
+독립적인 태스크는 병렬로 배정한다.
+
+---
+
+## Step 4 — Initial Report Update
+
+Spawn **Collector AI**:
+
+> "Collector AI: 변경 개발이 시작되었다. `report/report.md` 에 다음 내용을 반영하라.
+> - 변경 요청 기반 새 태스크 목록 추가
+> - 변경 배경: doc/CHANGE_REQUEST.md 요약 참조
+> - Project Status 업데이트"
+
+---
+
+## Step 5 — Report to User
+
+```
+🔄 변경 개발 시작
+
+변경 분석 완료:
+- 영향 파일: [n]개
+- 태스크: [n]건 (fix: n, feature: n, improvement: n)
+- 제외 항목: [Out of Scope 요약]
+
+진행 상황은 report/report.md 에서 확인하세요.
+```

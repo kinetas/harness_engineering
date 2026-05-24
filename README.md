@@ -8,6 +8,49 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 
 ---
 
+## 스킬 목록
+
+### 워크스페이스 관리
+| 스킬 | 설명 |
+|---|---|
+| `/createCompany` | 폴더/파일 구조 생성 |
+| `/startCompany` | Main AI 초기화 |
+| `/stopCompany` | 시스템 일시 중단 |
+| `/deleteCompany` | 워크스페이스 삭제 |
+
+### 프로젝트 진행
+| 스킬 | 설명 |
+|---|---|
+| `/projectStart` | PRD 분석 후 전체 프로젝트 시작 |
+| `/newTask [요청]` | 개별 태스크 요청 — Boss AI가 분석 후 HR AI → Sub AI 라우팅 |
+| `/bossMode [on\|off]` | Boss AI 상시 모드 토글 — on 시 유저 입력 자동 인터셉트 |
+| `/complainProject` | 변경 요청 마법사 — 개선/수정 사항을 대화형으로 수집하여 CHANGE_REQUEST.md 작성 및 PRD 업데이트 |
+| `/changeStart` | 변경 개발 시작 — CHANGE_REQUEST.md 기반으로 태스크 계획 후 Sub AI 배정 |
+| `/setupDoc` | PRD / Coding Rule 대화형 작성 마법사 |
+
+### 팀 운영
+| 스킬 | 설명 |
+|---|---|
+| `/interceptBoss` | Boss AI 대기 모드 전환 |
+| `/teamLimit [n]` | Sub AI 팀 한도 변경 |
+| `/holidayStart` | 휴일 모드 (Sub AI 일시 정지) |
+| `/holidayOver` | 휴일 모드 해제 |
+
+### 품질 & 모니터링
+| 스킬 | 설명 |
+|---|---|
+| `/adjustCodingRule [file]` | Debugger AI로 코딩 규칙 검사 |
+| `/debugLimit [n]` | Debugger AI 반려 횟수 제한 변경 |
+| `/companyMonitering` | Monitoring AI 토글 (태스크 완료 시 자원 점검) |
+
+### 보고서
+| 스킬 | 설명 |
+|---|---|
+| `/autoReport` | Collector AI 자동 보고서 수집 토글 |
+| `/giveMeReport` | 현재 report.md 요약 출력 |
+
+---
+
 ## 스킬 파일 구조 (템플릿 시스템)
 
 각 스킬은 두 개의 파일로 관리됩니다:

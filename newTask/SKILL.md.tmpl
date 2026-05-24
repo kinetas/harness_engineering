@@ -1,0 +1,83 @@
+---
+name: newTask
+description: 새 태스크 요청 — 유저 요청을 Boss AI가 분석하여 HR AI → Sub AI 파이프라인으로 라우팅합니다.
+---
+
+{{ROLE}} The user has invoked `/newTask [description]`.
+
+Analyze the user's request and route it through the Sub AI pipeline.
+
+---
+
+## Step 1 — Read System State
+
+{{READ_ALL_CONTEXT}}
+
+If `doc/company_state.json` does not exist or `status` is not `active`, stop and tell the user:
+> "시스템이 초기화되지 않았습니다. 먼저 /startCompany 를 실행해주세요."
+
+---
+
+## Step 2 — Parse Request
+
+Extract the task description from the argument provided after `/newTask`.
+
+If no argument is given, ask the user:
+> "어떤 작업을 요청하시겠어요? 버그 수정, 새 기능 추가, 개선 사항 등을 설명해주세요."
+
+---
+
+## Step 3 — Classify and Analyze
+
+Classify the request type:
+- **bug** — 기존 코드의 오류 수정
+- **feature** — 새 기능 추가
+- **improvement** — 기존 기능 개선
+- **refactor** — 코드 구조 개선
+
+Then produce:
+1. **Request Summary** — 한 문장 요약
+2. **Affected Area** — 영향받는 모듈/파일 추정
+3. **Task Breakdown** — 단계별 작업 목록 (복잡하면 TASK-XXX 형식으로 분할, 단순하면 단일 태스크)
+4. **Required Specialty** — 필요한 Sub AI 역량
+
+`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고, 완료 후 `taskCounter`를 업데이트한다.
+
+---
+
+## Step 4 — Assign via HR AI
+
+For each task, spawn an **HR AI agent**:
+
+> "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
+>
+> 태스크: [TASK-XXX] — [작업 설명]
+> 요청 유형: [bug | feature | improvement | refactor]
+> 필요 역량: [required specialty]
+>
+> 배정 절차:
+> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
+> 2. 있으면: STATUS를 WORKING으로, CURRENT TASK를 업데이트하고 Sub AI를 spawn하라.
+> 3. 없으면: 슬롯 확인 후 생성 또는 '슬롯 부족' 보고.
+>
+> Sub AI 작업 완료 시:
+> - `report/fragment/TASK-XXX_[ai-name].md` 작성 (완료 시각, 작업 요약, 예상 토큰 소모량 포함)
+> - HR AI에게 완료 보고 → HR AI가 AI_list.txt IDLE 업데이트 → Boss AI에게 전달
+>
+> Boss AI 수신 후 병렬 spawn:
+> - Collector AI: report.md에 완료 태스크 반영
+> - Monitoring AI: 자원 소모 점검 (monitoringEnabled=true인 경우만)"
+
+---
+
+## Step 5 — Report to User
+
+```
+📋 태스크 접수 완료
+
+유형: [type]
+태스크: [TASK-XXX] [summary]
+배정: [AI name] → 작업 시작
+
+완료 시 report/report.md 에 자동 반영됩니다.
+```

@@ -88,6 +88,7 @@ Set `startedAt` to the current date and time (ISO format).
   "debugLimit": 1,
   "autoReport": true,
   "monitoringEnabled": true,
+  "bossMode": false,
   "holidayMode": false,
   "taskCounter": 0,
   "startedAt": ""
@@ -110,10 +111,15 @@ Main AI 초기화 완료:
 설정:
  ├─ Team Limit  : 5
  ├─ Debug Limit : 1회
- └─ Auto Report : ON
+ ├─ Auto Report : ON
+ └─ Boss Mode   : OFF
 
 다음 단계:
 1. doc/PRD.md 에 프로젝트 요구사항 작성
 2. doc/Coding_Rule.txt 에 코딩 규칙 작성 (선택)
 3. /projectStart 입력하여 개발 시작
+
+프로젝트 시작 후 추가 작업:
+- /newTask [요청]   — 개별 태스크 요청
+- /bossMode on     — Boss AI 상시 모드 (자동 라우팅)
 ```
