@@ -16,7 +16,7 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 | `/createCompany` | 워크스페이스 생성 — 처음 시작 또는 배포 후 재개발 시 구조 복원 |
 | `/startCompany` | Main AI 초기화 |
 | `/stopCompany` | 시스템 일시 중단 |
-| `/deleteCompany` | 배포 전 정리 — AI 운영 파일 삭제 후 README.md 자동 생성 |
+| `/deleteCompany` | 배포 전 정리 — AI 운영 파일 삭제 + README.md 선택 생성 (기존 파일 보호) |
 
 ### 프로젝트 진행
 | 스킬 | 설명 |
