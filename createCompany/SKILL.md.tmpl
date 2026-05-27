@@ -9,7 +9,19 @@ Do NOT initialize any AI. That is handled by `/startCompany`.
 
 ---
 
-## Step 1 — Create Folder Structure
+## Step 1 — Detect Existing State
+
+Check whether the following content files already exist:
+- `doc/PRD.md`
+- `doc/Coding_Rule.txt`
+- `report/report.md`
+
+If **any of them exist**, this is a **re-initialization** (user is resuming or restarting after `/deleteCompany`).
+If **none exist**, this is a **fresh setup**.
+
+---
+
+## Step 2 — Create Folder Structure
 
 Create the following folders if they do not exist:
 - `doc/sample/`
@@ -22,11 +34,33 @@ Create the following folders if they do not exist:
 
 ---
 
-## Step 2 — Create Operational Files
+## Step 3 — Create Files
 
-Create the following files with the content below.
+### Always create (overwrite is safe — these are AI operational files):
+- `doc/AI_anomaly.txt`
+- `add/registry.json`
 
-### `doc/PRD.md`
+#### `doc/AI_anomaly.txt`
+```
+[AI Anomaly Log]
+
+(Monitoring AI가 이상 감지 시 이 파일에 기록합니다.)
+```
+
+#### `add/registry.json`
+```json
+{
+  "extensions": []
+}
+```
+
+### Create only if file does NOT already exist:
+- `doc/PRD.md`
+- `doc/Coding_Rule.txt`
+- `develope/README.md`
+- `report/report.md`
+
+#### `doc/PRD.md`
 ```
 # Product Requirement Document
 
@@ -144,14 +178,7 @@ Boss AI must:
 # Final Notes
 ```
 
-### `doc/AI_anomaly.txt`
-```
-[AI Anomaly Log]
-
-(Monitoring AI가 이상 감지 시 이 파일에 기록합니다.)
-```
-
-### `doc/Coding_Rule.txt`
+#### `doc/Coding_Rule.txt`
 ```
 [Harness Engineering 코딩 규칙]
 
@@ -159,14 +186,7 @@ Boss AI must:
 (참고 양식: doc/sample/Coding_Rule_sample.txt)
 ```
 
-### `add/registry.json`
-```json
-{
-  "extensions": []
-}
-```
-
-### `develope/README.md`
+#### `develope/README.md`
 ```
 # develope
 
@@ -177,7 +197,7 @@ Boss AI must:
 - 구조는 PRD의 Architecture Style을 따릅니다.
 ```
 
-### `report/report.md`
+#### `report/report.md`
 ```
 # Project Report
 
@@ -238,7 +258,9 @@ Last Update: (미시작)
 (없음)
 ```
 
-## Step 3 — Note Sample Files
+---
+
+## Step 4 — Note Sample Files
 
 The following sample files already exist as read-only references. Do NOT overwrite them:
 - `doc/sample/PRD_sample.md`
@@ -250,12 +272,12 @@ The following sample files already exist as read-only references. Do NOT overwri
 
 ---
 
-## Step 4 — Report to User
+## Step 5 — Report to User
 
-When all steps are complete, report to the user with the following format:
+### If fresh setup:
 
 ```
-✅ Harness Engineering 폴더/파일 구조 생성 완료
+✅ Harness Engineering 워크스페이스 생성 완료
 
 생성된 구조:
 doc/
@@ -270,4 +292,26 @@ report/             (보고서)
 
 다음 단계:
 1. /startCompany 입력하여 Main AI 초기화
+```
+
+### If re-initialization (existing files detected):
+
+```
+✅ 워크스페이스 복원 완료
+
+기존 파일 유지됨:
+  doc/PRD.md          ← 이전 프로젝트 기획 문서
+  doc/Coding_Rule.txt ← 이전 코딩 규칙
+  report/report.md    ← 이전 개발 보고서
+
+AI 운영 파일 재생성됨:
+  doc/AI_anomaly.txt
+  add/registry.json
+
+내용 수정이 필요하면:
+  /complainProject  → PRD 변경 요청
+  /newTask          → 개별 수정 작업 요청
+
+다음 단계:
+1. /startCompany 입력하여 Main AI 재초기화
 ```

@@ -13,7 +13,7 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 ### 워크스페이스 관리
 | 스킬 | 설명 |
 |---|---|
-| `/createCompany` | 폴더/파일 구조 생성 |
+| `/createCompany` | 워크스페이스 생성 — 처음 시작 또는 배포 후 재개발 시 구조 복원 |
 | `/startCompany` | Main AI 초기화 |
 | `/stopCompany` | 시스템 일시 중단 |
 | `/deleteCompany` | 배포 전 정리 — AI 운영 파일 삭제 후 README.md 자동 생성 |
