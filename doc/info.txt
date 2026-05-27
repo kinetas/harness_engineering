@@ -7,7 +7,7 @@ Last Updated: 2026-05-24
 ==================================================
 
 --- 워크스페이스 관리 ---
-/createCompany              : 기본 폴더/파일 구조 생성
+/createCompany              : 워크스페이스 생성 — 처음 시작 시 전체 구조 생성, 재개발 시 AI 운영 파일만 재생성 후 기존 PRD/Coding_Rule/report 유지
 /startCompany               : Main AI 초기화 및 시스템 가동
 /stopCompany                : 모든 AI 프로세스 일시정지
 /deleteCompany              : 배포 전 정리 — AI 운영 파일 삭제 후 PRD+report 기반 README.md 자동 생성
