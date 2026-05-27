@@ -78,7 +78,7 @@ If turned ON:
 이후 입력하는 모든 작업 요청이 자동으로 Sub AI 파이프라인을 거칩니다.
 
 라우팅 기준:
- ├─ 작업 요청 → HR AI → Sub AI 배정
+ ├─ 작업 요청 → Manager AI → Sub AI 배정
  └─ 상태 질문 / 설명 요청 → Boss AI 직접 답변
 
 해제하려면 /bossMode off 를 입력하세요.

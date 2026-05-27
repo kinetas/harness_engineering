@@ -1,13 +1,13 @@
 ---
 name: changeStart
-description: 변경 개발 시작 — CHANGE_REQUEST.md 기반 Wave 계획 후 독립 태스크는 병렬로 Sub AI에게 위임합니다.
+description: 변경 개발 시작 — Boss AI가 DAG를 생성하고 Dependency Island 기반으로 세그먼트를 분할하여 Manager AI에게 위임합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 
 You are **Boss AI**. The user has invoked `/changeStart`.
 
-Read the change request document, plan tasks scoped to the changes only, and delegate to Sub AIs through HR AI.
+Read the change request, build a DAG, partition into dependency islands, and delegate each segment to a Manager AI.
 
 ---
 
@@ -25,67 +25,92 @@ If `doc/CHANGE_REQUEST.md` does not exist, stop and tell the user:
 
 ---
 
-## Step 2 — Analyze Change Request
+## Step 2 — Build DAG & Segment Partition
 
-As Boss AI, analyze CHANGE_REQUEST.md and produce:
+**중요**: Out of Scope 항목 제외. 이미 완료된 작업 중복 실행 금지.
 
-1. **Change Summary** — 한 문단 요약
-2. **Impact Analysis** — 기존 코드(`develope/`) 중 영향받는 파일/모듈 목록
-3. **Task Breakdown** — 변경 범위 내 작업 목록 (TASK-XXX 형식, taskCounter 이어서 부여)
-4. **Dependency Map** — 변경 태스크 간 선후 관계
-5. **Parallel Wave Plan** — 의존성 기준으로 동시 처리 가능한 Wave 그룹으로 묶기
-6. **AI Assignment Plan** — 각 태스크에 필요한 Sub AI 역량
+`doc/company_state.json`의 `taskCounter`를 이어서 부여하고 업데이트한다.
 
-Use this format for each task:
+### STEP 2-1 — DAG 생성
+
+변경 범위 내 태스크를 노드로, 의존성을 방향 엣지로 하는 DAG를 생성한다:
 ```
-TASK-XXX | 변경 유형(fix/feature/improvement/refactor) | 작업 설명 | 담당 AI 역량 | 선행 TASK
+{
+  "id": "TASK-XXX",
+  "change_type": "fix|feature|improvement|refactor",
+  "deps": ["TASK-YYY"],
+  "domain": "backend|frontend|infra|testing|docs",
+  "files": ["수정 대상 파일 경로들"]
+}
 ```
 
-**중요**: 변경 요청에 명시된 Out of Scope 항목은 태스크에 포함하지 않는다.
-기존에 완료된 작업(`report/report.md` 기준)은 중복 실행하지 않는다.
+### STEP 2-2 — Topological Layering
 
-After analysis, update `taskCounter` in `doc/company_state.json`.
+DAG를 BFS 기반으로 레이어로 구분한다.
+
+### STEP 2-3 — Domain Clustering + File Ownership
+
+- 같은 파일을 수정하는 태스크는 반드시 같은 세그먼트
+- Shared infra 태스크는 별도 세그먼트
+- Verification/Testing 태스크는 별도 세그먼트
+
+### STEP 2-4 — Segment 생성 + Dependency Contract
+
+```json
+{
+  "segment_id": "backend_fix",
+  "tasks": ["TASK-XXX"],
+  "file_ownership": ["수정 가능한 파일/폴더"],
+  "imports": ["다른 세그먼트에서 받을 결과물"],
+  "exports": ["이 세그먼트가 제공할 결과물"]
+}
+```
 
 ---
 
-## Step 3 — Assign Tasks via HR AI (Wave 단위 병렬 처리)
+## Step 3 — Execute Segments via Manager AIs
 
-Wave 순서대로 처리한다. **같은 Wave의 태스크는 HR AI를 동시에 spawn한다.**
+`imports`가 없는 세그먼트부터 Manager AI를 spawn (병렬 가능).
+exports 완료 시 해당 imports를 가진 세그먼트를 즉시 spawn.
 
-> "HR AI: 다음 변경 태스크를 처리할 Sub AI를 배정하라.
->
-> 태스크: [TASK-XXX] — [변경 유형] [작업 설명]
-> 영향 파일: [affected files/modules]
-> 필요 역량: [required specialty]
->
-> 배정 절차:
-> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
-> 2. 있으면: STATUS를 WORKING으로, CURRENT TASK를 업데이트하고 Sub AI를 spawn하라.
-> 3. 없으면: 슬롯 확인 후 생성 또는 '슬롯 부족' 보고.
->
-> Sub AI 작업 지침:
-> - 기존 코드를 먼저 읽고 변경 범위를 파악한 후 작업할 것.
-> - 변경 요청 외 코드를 임의로 수정하지 말 것.
-> - `report/fragment/TASK-XXX_[ai-name].md` 보고서 작성 (완료 시각, 변경 내역, 영향받은 파일 목록, 예상 토큰 소모량 포함)
-> - HR AI에게 완료 보고.
->
-> Sub AI 완료 시:
-> - HR AI: AI_list.txt IDLE 업데이트 → Boss AI 전달
-> - Boss AI: Collector AI + Monitoring AI 병렬 spawn"
+### Manager AI 지침 (각 세그먼트마다)
 
-현재 Wave의 모든 태스크 완료 후 다음 Wave를 시작한다.
-슬롯 부족으로 대기 중인 태스크는 완료된 태스크 슬롯이 생기는 즉시 배정한다.
+> "Manager AI [N] — [segment_id] Bounded Context Coordinator
+>
+> 너는 이 세그먼트의 경계를 소유한 코디네이터다.
+> 변경 요청 범위 내에서만 작업하며, file_ownership 경로 외의 파일은 절대 수정하지 않는다.
+>
+> [Dependency Contract]
+> - segment_id: [segment_id]
+> - file_ownership: [파일/폴더 목록]
+> - imports: [다른 세그먼트로부터 받은 결과물]
+> - exports: [완료 시 제공할 결과물]
+>
+> [담당 태스크]
+> TASK-XXX | change_type | 작업 설명 | 필요 역할 | 내부 선행 TASK
+> ...
+>
+> [운영 규칙]
+> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에 항목 추가 (STATUS: WORKING)
+> 3. 각 Sub AI 완료 후: doc/AI_list.txt에서 항목 삭제, Team Status 재계산
+> 4. 태스크 완료마다 Collector AI + Monitoring AI를 병렬 spawn한다.
+> 5. 세그먼트 완료 시: exports 결과물 목록과 함께 Boss AI에게 보고 후 종료한다.
+>
+> [Sub AI 작업 지침]
+> - 기존 코드를 먼저 읽고 변경 범위를 파악한 후 작업할 것
+> - file_ownership 경로에만 코드 작성
+> - 변경 요청 외 코드를 임의로 수정하지 말 것
+> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성
+>   (포함: 완료 시각, 변경 내역, 수정 파일 목록, 예상 토큰 소모량(대/중/소))
+> - Manager AI에게 완료 보고"
 
 ---
 
 ## Step 4 — Initial Report Update
 
 Spawn **Collector AI**:
-
-> "Collector AI: 변경 개발이 시작되었다. `report/report.md` 에 다음 내용을 반영하라.
-> - 변경 요청 기반 새 태스크 목록 추가
-> - 변경 배경: doc/CHANGE_REQUEST.md 요약 참조
-> - Project Status 업데이트"
+> "Collector AI: 변경 개발이 시작되었다. report/report.md에 세그먼트 구성, 변경 태스크 목록, Project Status를 업데이트하라."
 
 ---
 
@@ -94,10 +119,16 @@ Spawn **Collector AI**:
 ```
 🔄 변경 개발 시작
 
-변경 분석 완료:
-- 영향 파일: [n]개
-- 태스크: [n]건 (fix: n, feature: n, improvement: n)
-- 제외 항목: [Out of Scope 요약]
+태스크: [n]건 / 세그먼트: [n]개
+제외 항목: [Out of Scope 요약]
+
+세그먼트 구성:
+  [segment_id] (Manager AI-N): TASK-XXX, ...
+    └─ imports: [...] / exports: [...]
+
+실행 순서:
+  즉시 시작: [segment_id, ...]
+  대기 중:   [segment_id] (기다리는 exports: [...])
 
 진행 상황은 report/report.md 에서 확인하세요.
 ```

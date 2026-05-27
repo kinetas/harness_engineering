@@ -69,7 +69,7 @@ add/installed/kafka/README.md
 
 # Suggested Next Action
 
-1. HR AI update extension registry
+1. Manager AI update extension registry
 2. Debugger AI validate schema
 3. Monitoring AI observe runtime usage
 

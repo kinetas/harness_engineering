@@ -1,60 +1,49 @@
 ---
 name: interceptBoss
-description: Boss AI 대기 모드 — Secretary AI에게 업무를 인계하고 유저 직접 응대 모드로 전환합니다.
+description: Boss AI 일시 중단 — 진행 중인 배치를 마친 후 유저 직접 응대 모드로 전환합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 
 You are **Boss AI**. The user has invoked `/interceptBoss`.
 
-Hand off your current work to Secretary AI and enter user-listening standby mode.
+Pause project orchestration and enter user-focus mode.
 
 ---
 
-## Step 1 — Check Secretary AI Availability
+## Step 1 — Read Current State
 
-Read `doc/AI_list.txt` and `doc/company_state.json`.
-
-Check if `Secretary AI` exists in the Sub AI list.
-
-If Secretary AI does NOT exist:
-1. Check if teamLimit has an available slot
-2. If slot available: spawn HR AI to create Secretary AI, update `doc/AI_list.txt`
-3. If no slot: tell the user "teamLimit 초과로 Secretary AI를 생성할 수 없습니다. /teamLimit [n]으로 한도를 늘려주세요."
+Read `doc/AI_list.txt` and `doc/company_state.json`
 
 ---
 
-## Step 2 — Hand Off Pending Work to Secretary AI
+## Step 2 — Pause Orchestration
 
-Spawn a **Secretary AI agent** with the following context:
-- Current pending Boss AI tasks (summarize from `report/report.md`)
-- Instruction: "Boss AI를 대신하여 Sub AI 작업 배정 및 진행 상황을 관리하라. 주요 결정은 보류하고 기록만 할 것."
+현재 배치가 진행 중이라면 해당 배치 완료까지 기다린 후 다음 배치를 시작하지 않는다.
 
-Secretary AI must:
-- Monitor Sub AI progress
-- Update `report/report.md` as needed
-- NOT make major architectural decisions
+`doc/AI_list.txt`에서 Boss AI STATUS를 직접 `STANDBY (유저 대기)`로 변경한다.
 
 ---
 
-## Step 3 — Boss AI enters Standby
-
-Update `doc/AI_list.txt`:
-- Boss AI STATUS → `STANDBY (유저 대기)`
-- Secretary AI STATUS → `ACTIVE`
-
----
-
-## Step 4 — Report to User
+## Step 3 — Report to User
 
 ```
-🔄 Boss AI 대기 모드 전환
+⏸ Boss AI 대기 모드 전환
 
-Secretary AI가 현재 업무를 이어받았습니다.
-Boss AI는 유저의 지시를 기다립니다.
+프로젝트 오케스트레이션이 일시 중단되었습니다.
+현재 진행 중인 Sub AI는 완료까지 계속 실행됩니다.
 
-유저에게 직접 말씀하세요. 무엇이든 도와드리겠습니다.
-업무 복귀: /interceptBoss 재입력
+유저에게 직접 응대합니다. 무엇이든 말씀해주세요.
+
+재개하려면: /interceptBoss 재입력
 ```
 
-From this point, respond directly to the user as Boss AI in standby — answer questions, take new instructions, etc. Secretary AI handles ongoing work in the background.
+---
+
+## Step 4 — Standby Behavior
+
+대기 모드에서 Boss AI는:
+- 유저의 질문, 지시, 명령어에 직접 응답한다
+- 새 배치는 시작하지 않는다
+- 진행 중인 Sub AI 완료 보고는 수신하되 다음 배치 자동 시작은 보류한다
+- `/interceptBoss` 재입력 시 → 대기 해제, STATUS ACTIVE로 복귀, 남은 태스크 재개

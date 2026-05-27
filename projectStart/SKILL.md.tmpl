@@ -1,11 +1,11 @@
 ---
 name: projectStart
-description: 프로젝트 시작 — PRD 분석 후 의존성 기반 Wave 계획, 병렬 처리 가능한 태스크는 동시에 Sub AI에게 위임합니다.
+description: 프로젝트 시작 — Boss AI가 DAG를 생성하고 Dependency Island 기반으로 세그먼트를 분할하여 Manager AI에게 위임합니다.
 ---
 
 {{ROLE}} The user has invoked `/projectStart`.
 
-Your job is to read the PRD, plan the entire project, and begin delegating work to Sub AIs.
+Your job is to read the PRD, build a DAG, partition it into dependency islands, and delegate each segment to a Manager AI (Bounded Context Coordinator).
 
 ---
 
@@ -18,126 +18,150 @@ If `doc/PRD.md` is empty or contains only the template placeholder text, stop an
 
 ---
 
-## Step 2 — Analyze PRD
+## Step 2 — Build DAG & Segment Partition
 
-As Boss AI, analyze the PRD and produce:
+Boss AI는 아래 4단계 알고리즘으로 세그먼트를 구성한다.
 
-1. **Project Summary** — 한 문단 요약
-2. **Task Breakdown** — 전체 작업 목록 (TASK-001, TASK-002, ...)
-3. **Dependency Map** — 각 TASK의 선행 TASK 목록
-4. **Parallel Wave Plan** — 의존성 기준으로 동시에 처리 가능한 Wave 그룹으로 묶기
-5. **AI Assignment Plan** — 각 TASK에 필요한 AI 역할
+### STEP 2-1 — DAG 생성
 
-Use this format for each task:
+각 태스크를 노드로, 의존성을 방향 엣지로 하는 DAG를 생성한다.
+
+각 태스크에 명시할 정보:
 ```
-TASK-XXX | 작업 설명 | 담당 AI 역할 | 선행 TASK
+{
+  "id": "TASK-XXX",
+  "description": "작업 설명",
+  "deps": ["TASK-YYY"],       // 선행 태스크 (없으면 [])
+  "domain": "backend|frontend|infra|testing|docs",
+  "files": ["예상 작업 파일 경로들"]  // File Ownership 판단 기준
+}
 ```
 
-Wave 구성 규칙:
-- 선행 TASK가 없는 것들 → Wave 1
-- Wave N의 모든 TASK가 완료되어야 시작 가능한 것들 → Wave N+1
-- 같은 Wave 안의 TASK들은 병렬 처리
+`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고 업데이트한다.
 
-Example:
+### STEP 2-2 — Topological Layering
+
+DAG를 BFS 기반으로 레이어로 구분한다:
+- **Layer 1**: deps가 없는 태스크 (루트 노드)
+- **Layer N**: 모든 선행 태스크가 Layer N-1 이하에 속하는 태스크
+
 ```
-Wave 1: TASK-001
-Wave 2: TASK-002, TASK-003, TASK-006  ← 동시 처리
-Wave 3: TASK-004
-Wave 4: TASK-005
+예시:
+Layer 1: schema, infra
+Layer 2: repository, config
+Layer 3: auth_api, user_api, billing_api, frontend_login
+Layer 4: integration_test, deploy
 ```
+
+### STEP 2-3 — Domain Clustering
+
+같은 레이어 내에서 domain별로 클러스터링한다:
+- `backend/*` — 서버 로직, API, 인증
+- `frontend/*` — UI, 컴포넌트
+- `infra/*` — DB, 설정, 공유 타입
+- `testing/*` — 통합 테스트, e2e
+
+**File Ownership 원칙** (가장 중요):
+- 같은 파일을 수정하는 태스크는 반드시 같은 세그먼트에 배치한다
+- Manager AI 간 파일 중복은 절대 금지
+
+**Shared Infra 원칙**:
+- DB schema, config, shared types처럼 여러 세그먼트가 의존하는 태스크는 별도 세그먼트로 분리한다
+
+**Verification 원칙**:
+- 테스트/검증 태스크는 별도 세그먼트로 분리한다
+
+### STEP 2-4 — Segment 생성 + Dependency Contract
+
+각 세그먼트에 Dependency Contract를 정의한다:
+
+```json
+{
+  "segment_id": "backend_core",
+  "manager": "Manager AI-01",
+  "tasks": ["TASK-002", "TASK-003", "TASK-004"],
+  "file_ownership": ["backend/auth/*", "backend/user/*", "backend/billing/*"],
+  "imports": ["DatabaseSchema"],    // 다른 세그먼트에서 완료되어야 하는 결과물
+  "exports": ["UserRepository", "AuthAPI", "BillingAPI"]  // 이 세그먼트가 생산하는 결과물
+}
+```
+
+세그먼트 간 의존성은 `imports` / `exports` 계약으로 명시한다.
 
 ---
 
-## Step 3 — Assign Tasks via HR AI (Wave 단위 병렬 처리)
+## Step 3 — Execute Segments via Manager AIs
 
-Wave 순서대로 처리한다. **같은 Wave의 모든 태스크는 동시에 HR AI에게 요청한다.**
+Boss AI가 세그먼트 간 의존성(imports/exports 계약)을 기준으로 Manager AI를 조율한다.
 
-### Wave 처리 방식
+- `imports`가 없는 세그먼트 → 즉시 Manager AI spawn (병렬 가능)
+- `imports`가 있는 세그먼트 → 해당 exports가 모두 완료된 후 spawn
 
-현재 Wave의 모든 태스크에 대해 **HR AI를 동시에 spawn**한다 (한 태스크당 하나의 HR AI 요청):
+### Manager AI 지침 (각 세그먼트마다)
 
-> "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
+> "Manager AI [N] — [segment_id] Bounded Context Coordinator
 >
-> 태스크: [TASK-XXX] — [작업 설명]
-> 필요 역량: [required specialty, e.g. Backend / Frontend / DB]
+> 너는 이 세그먼트의 경계를 소유한 코디네이터다.
+> 아래 태스크와 파일을 전담하며, 다른 세그먼트의 파일은 절대 수정하지 않는다.
 >
-> 배정 절차:
-> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
-> 2. 있으면: 해당 Sub AI의 STATUS를 WORKING으로, CURRENT TASK를 '[TASK-XXX] [작업 설명]'으로 업데이트하고 Sub AI를 spawn하라.
-> 3. 없으면: 새 슬롯이 있는지 확인하라. (`doc/company_state.json`의 teamLimit 기준)
->    - 슬롯 있음: 새 Sub AI 항목을 `doc/AI_list.txt`에 추가(STATUS: WORKING, CURRENT TASK 기록)하고 spawn하라.
->    - 슬롯 없음: Boss AI에게 '슬롯 부족 — [TASK-XXX] 대기 중' 보고.
+> [Dependency Contract]
+> - segment_id: [segment_id]
+> - file_ownership: [파일/폴더 목록] — 이 경로만 수정 가능
+> - imports: [다른 세그먼트로부터 받은 결과물 목록]
+> - exports: [이 세그먼트가 완료 시 제공할 결과물 목록]
 >
-> Sub AI 작업 완료 시 HR AI는 반드시:
-> - 해당 Sub AI의 STATUS를 IDLE로 변경
-> - CURRENT TASK를 None으로 변경
-> - Team Status의 숫자를 재계산하여 업데이트
-> - Boss AI에게 완료 보고
+> [담당 태스크 (내부 의존성 포함)]
+> TASK-XXX | 작업 설명 | 필요 역할 | 내부 선행 TASK
+> ...
 >
-> Boss AI는 직접 `doc/AI_list.txt`를 수정하지 않는다. 모든 AI 명단 변경은 HR AI만 수행한다."
+> [운영 규칙]
+> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에 항목 추가 (STATUS: WORKING)
+> 3. 각 Sub AI 완료 후: doc/AI_list.txt에서 항목 삭제, Team Status 재계산
+> 4. 태스크 완료마다 Collector AI + Monitoring AI를 병렬 spawn한다:
+>    - "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
+>    - "Monitoring AI: TASK-XXX 자원 소모 점검." (monitoringEnabled=true인 경우만)
+> 5. 세그먼트 완료 시: exports 결과물 목록과 함께 Boss AI에게 보고 후 종료한다.
+>
+> [Sub AI 작업 지침]
+> - 담당 file_ownership 경로에만 코드 작성
+> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성
+>   (포함: 완료 시각, 작업 요약, 주요 결정사항, 생성/수정 파일 목록, 예상 토큰 소모량(대/중/소))
+> - Manager AI에게 완료 보고
+>
+> Manager AI는 직접 코드를 작성하지 않는다. Sub AI에게만 위임한다."
 
-### 슬롯 부족 시 처리
+### 세그먼트 완료 후 처리
 
-Wave 내 일부 태스크가 슬롯 부족으로 대기되면:
-- 완료된 태스크가 생길 때마다 대기 태스크를 즉시 배정
-- Wave 내 모든 태스크 완료 후 다음 Wave로 진행
-
-### Wave 완료 조건
-
-현재 Wave의 **모든 태스크**가 완료 보고를 받아야 다음 Wave를 시작한다.
-
-Sub AI must follow this work cycle:
-1. 지시된 작업 수행
-2. `develope/` 에 코드 작성
-3. `report/fragment/TASK-XXX_[ai-name].md` 보고서 작성
-   - 보고서에 반드시 포함: 완료 시각, 작업 요약, 주요 결정사항, 예상 토큰 소모량(대/중/소)
-4. HR AI에게 완료 보고 → HR AI가 AI_list.txt 업데이트 후 Boss AI에게 전달
-
-**Sub AI 완료 수신 시 Boss AI 처리 절차:**
-
-HR AI로부터 태스크 완료 보고를 받으면, Boss AI는 다음 두 에이전트를 **병렬로** spawn한다.
-Wave 내 다른 태스크가 아직 진행 중이면 다음 Wave 시작은 보류하고 Collector/Monitoring만 처리한다:
-
-> **Collector AI**: "TASK-XXX 가 완료되었다. `report/fragment/TASK-XXX_[ai-name].md` 를 읽고 `report/report.md` 에 반영하라. 완료된 태스크를 Current Working Tasks에서 Completed로 이동하고 AI Activity Summary를 업데이트하라. Boss AI는 report.md를 직접 수정하지 않는다."
-
-> **Monitoring AI** (`doc/company_state.json`의 `monitoringEnabled`가 `true`인 경우에만):
-> "Monitoring AI: TASK-XXX 완료 후 자원 소모를 점검하라.
-> `report/fragment/TASK-XXX_[ai-name].md` 를 읽어 토큰 소모량 및 이상 패턴을 확인하라.
-> 이상 감지 기준:
-> - 토큰 소모가 '대'로 표시된 경우
-> - 동일 오류 반복 언급
-> - 작업 범위 초과 징후
-> 이상 감지 시: `doc/AI_anomaly.txt` 에 기록 후 Boss AI에게 경고.
-> 정상이면: 보고 생략."
-
-두 에이전트 완료 후 Boss AI는 다음 대기 태스크를 HR AI에게 배정한다.
+세그먼트 완료 보고를 받으면:
+- exports 결과물을 의존성 계약에 반영
+- 해당 exports를 imports로 가진 세그먼트의 준비 여부 확인
+- 준비된 세그먼트가 있으면 즉시 Manager AI spawn
 
 ---
 
 ## Step 4 — Initial Report on Project Start
 
-프로젝트 시작 직후 한 번만, **Collector AI**를 spawn하여 초기 상태를 report.md에 반영한다:
+프로젝트 시작 직후 Collector AI를 1회 spawn:
+> "Collector AI: 프로젝트가 시작되었다. report/report.md를 현재 상태로 업데이트하라.
+> - 세그먼트 구성 및 태스크 목록
+> - Project Status: 진행 중"
 
-> "Collector AI: 프로젝트가 시작되었다. `report/report.md` 를 현재 상태로 업데이트하라.
-> - Current Working Tasks: [배정된 태스크 목록]
-> - Project Status: 진행 중
-> - AI Activity Summary: 현재 배정된 AI 목록
-> `doc/AI_list.txt` 를 읽어 최신 현황을 반영하라."
-
----
-
-## Step 5 — Report to User
-
-Tell the user:
+유저에게 보고:
 ```
 🚀 프로젝트 시작
 
-분석 완료: [task count]개 작업 식별
-Wave 구성:
-  Wave 1: [TASK-XXX, ...]
-  Wave 2: [TASK-XXX, TASK-XXX, ...]  ← 병렬 처리
-  ...
+태스크: [n]개 / 레이어: [n]단계 / 세그먼트: [n]개
 
-현재 진행: Wave 1 시작
+세그먼트 구성:
+  [segment_id] (Manager AI-N): TASK-XXX, ...
+    └─ imports: [...] / exports: [...]
+  [segment_id] (Manager AI-N): TASK-XXX, ...
+    └─ imports: [...] / exports: [...]
+
+실행 순서:
+  즉시 시작: [segment_id, ...]
+  대기 중:   [segment_id] (기다리는 exports: [...])
+
 진행 상황은 report/report.md 에서 확인하세요.
 ```

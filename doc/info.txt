@@ -14,14 +14,14 @@ Last Updated: 2026-05-24
 
 --- 프로젝트 진행 ---
 /setupDoc                   : PRD 및 Coding Rule을 대화형 Q&A로 작성하는 마법사
-/projectStart               : PRD를 분석하고 의존성 기반 Wave 계획 후 같은 Wave 태스크는 병렬로 Sub AI에게 위임
-/newTask [요청]              : 개별 태스크 요청 — Boss AI가 Wave 분석 후 독립 태스크는 병렬로 Sub AI에게 위임
+/projectStart               : PRD를 분석하고 DAG 기반 세그먼트 분할 후 병렬로 Manager AI에게 위임
+/newTask [요청]              : 개별 태스크 요청 — Boss AI가 의존성 분석 후 Manager AI에게 위임
 /bossMode [on|off]          : Boss AI 상시 모드 토글 — on 시 모든 유저 입력 자동 인터셉트
 /complainProject            : 변경 요청 마법사 — 개선/수정 사항 수집, CHANGE_REQUEST.md 작성 및 PRD 업데이트
-/changeStart                : 변경 개발 시작 — CHANGE_REQUEST.md 기반 Wave 계획 후 독립 태스크는 병렬로 Sub AI에게 위임
+/changeStart                : 변경 개발 시작 — CHANGE_REQUEST.md 기반 DAG 분석 후 병렬로 Manager AI에게 위임
 
 --- 팀 운영 ---
-/interceptBoss              : Boss AI 대기 모드 전환 (Secretary AI가 업무 이관)
+/interceptBoss              : Boss AI 일시 중단 — 현재 세그먼트 완료 후 유저 직접 응대 모드 전환, 재입력 시 재개
 /teamLimit [n]              : 가동 가능한 Sub AI 최대 수 변경
 /holidayStart               : Main AI 제외 Sub AI 일시정지 (작업 데이터 유지)
 /holidayOver                : Sub AI 일시정지 해제 및 작업 재개
@@ -44,40 +44,50 @@ Last Updated: 2026-05-24
 2. AI 역할 정의 (AI Roles)
 ==================================================
 
---- Main AI (Boss AI가 직접 spawn) ---
+--- Main AI ---
 
 Boss AI
-- 유저 소통 전담. PRD 분석, 태스크 세분화, 작업 지시.
+- 유저 소통 전담. PRD 분석, 전체 의존성 그래프 작성, 프로젝트 규모 판단.
+- 의존성 그래프를 세그먼트로 분할하여 Manager AI에게 위임한다.
+- 세그먼트 간 의존성을 조율하고 완료된 세그먼트를 기반으로 다음 세그먼트를 시작한다.
 - AI_list.txt를 읽기만 한다. 직접 수정 불가.
 - report.md를 직접 작성하지 않는다. Collector AI에게 위임.
-- Sub AI를 직접 생성하지 않는다. HR AI에게 요청.
 
-HR AI
-- Sub AI 전체 생명주기 관리 (생성 → 배정 → 해제).
-- AI_list.txt 수정 권한을 가진 유일한 AI.
-- 태스크 배정 시: STATUS=IDLE Sub AI 탐색 → 없으면 슬롯 확인 → 생성 또는 대기 보고.
-- Sub AI 완료 시: STATUS를 IDLE로, CURRENT TASK를 None으로 업데이트.
+Manager AI (on-demand, Bounded Context Coordinator)
+- Boss AI로부터 Dependency Island(세그먼트)와 Dependency Contract를 위임받는다.
+- Segment = 강하게 연결된 dependency cluster. 분할 기준: File Ownership > Dependency Depth > Task 수.
+- file_ownership 경로 내에서만 작업하며 다른 세그먼트 파일은 절대 수정하지 않는다.
+- Dependency Contract: imports(다른 세그먼트에서 받을 결과물) / exports(제공할 결과물) 명시.
+- 세그먼트 내 Sub AI를 직접 spawn하고 AI_list.txt를 관리한다 (수정 권한을 가진 유일한 AI).
+- 세그먼트 완료 후 exports 결과물 목록과 함께 Boss AI에게 보고하고 종료한다.
 
-Monitoring AI
-- 태스크 완료 시마다 Boss AI가 spawn (상시 가동 아님).
+Boss AI Segmentation 알고리즘:
+  1. DAG 생성: 각 태스크를 노드, 의존성을 엣지로 표현
+  2. Topological Layering: BFS 기반 레이어 구분
+  3. Domain Clustering: 레이어 내 backend/frontend/infra/testing 도메인별 묶기
+  4. Segment 생성: File Ownership 충돌 방지 + Dependency Contract 정의
+     - Shared infra(DB schema, config, shared types) → 별도 세그먼트
+     - Verification/Testing → 별도 세그먼트
+
+Monitoring AI (on-demand)
+- 태스크 완료 시마다 Boss AI가 spawn.
 - fragment 보고서의 토큰 소모량, 오류 반복, 작업 범위 초과를 점검.
-- 이상 감지 시 doc/AI_anomaly.txt에 기록. 코드 품질 검사는 Debugger AI 담당.
-- companyMonitering=false 시 spawn 생략.
+- 이상 감지 시 doc/AI_anomaly.txt에 기록.
+- monitoringEnabled=false 시 spawn 생략.
 
-Collector AI
-- Sub AI 태스크 완료 시마다 Boss AI가 spawn (상시 가동 아님).
+Collector AI (on-demand)
+- 태스크 완료 시마다 Boss AI가 spawn.
 - fragment 보고서를 읽어 report.md에 반영.
 - 항상 실행 (Monitoring AI 이상 감지와 무관하게 완료된 작업은 반드시 등록).
 
---- Sub AI (HR AI가 생성 및 배정) ---
+--- Sub AI (Manager AI가 spawn) ---
 
-Sub AI는 PRD와 태스크 특성에 따라 HR AI가 동적으로 생성한다.
-아래는 예시 역할이며 고정 목록이 아니다.
+Sub AI는 Manager AI가 세그먼트 실행 시 직접 spawn한다.
+태스크 완료 후 즉시 AI_list.txt에서 삭제된다. 아래는 예시 역할이며 고정 목록이 아니다.
 
 - Backend AI    : 서버 사이드 로직, API, DB, 인증 등
 - Frontend AI   : UI/UX, HTML/CSS/JS, 프론트 프레임워크
 - Debugger AI   : 코드 검수, Coding Rule 준수 확인
-- Secretary AI  : Boss AI 업무 보조 (Boss AI가 직접 HR AI에게 요청)
 
 ==================================================
 3. AI_list.txt 형식 (Format)
@@ -89,9 +99,9 @@ Boss AI
 - STATUS: ACTIVE
 - ROLE: User Communication / Task Distribution
 
-HR AI
-- STATUS: ACTIVE
-- ROLE: AI Lifecycle Management (Sub AI 생성/배정/해제 전담)
+Manager AI
+- STATUS: ON-DEMAND
+- ROLE: Team Leader — 세그먼트 위임, Sub AI 배분, AI_list.txt 관리
 
 Monitoring AI
 - STATUS: ACTIVE | STANDBY
@@ -141,15 +151,14 @@ Available Slot        : [n]
 Sub AI 완료
   → fragment 보고서 작성
       (포함 항목: 완료 시각, 작업 요약, 주요 결정, 예상 토큰 소모량(대/중/소))
-  → HR AI에게 완료 보고
-  → HR AI: AI_list.txt 해당 Sub AI → STATUS: IDLE, CURRENT TASK: None
-  → HR AI: Team Status 숫자 재계산
-  → HR AI → Boss AI에게 완료 전달
-  → Boss AI: 병렬 spawn
+  → Manager AI에게 완료 보고
+  → Manager AI: AI_list.txt에서 해당 Sub AI 항목 삭제 + Team Status 재계산
+  → Manager AI: 병렬 spawn
        ├─ Collector AI  → report.md에 완료 태스크 반영 (항상)
        └─ Monitoring AI → 자원 소모 점검 → 이상 시 anomaly.txt 기록
                           (monitoringEnabled=true인 경우만)
-  → Boss AI: 다음 대기 태스크 HR AI에게 배정
+  → Manager AI: 세그먼트 내 의존성 확인 → 새로 실행 가능한 태스크 즉시 spawn
+  → 세그먼트 완료 시: Manager AI → Boss AI에게 보고 → Boss AI가 다음 세그먼트 시작
 
 ==================================================
 6. bossMode 인터셉트 기준
@@ -172,9 +181,10 @@ bossMode=true 상태에서 유저 입력 분기:
 ==================================================
 
 [권한 분리]
-- AI_list.txt 수정 → HR AI 전담. Boss AI 직접 수정 금지.
+- AI_list.txt 수정 → Manager AI 전담. Boss AI 직접 수정 금지.
 - report.md 수정  → Collector AI 전담. Boss AI 직접 작성 금지.
-- Sub AI 생성     → HR AI 전담. Boss AI 직접 생성 금지.
+- Sub AI 생성     → Manager AI 전담. Boss AI는 Manager AI에게만 위임.
+- 의존성 그래프   → Boss AI가 전체 그래프 작성, Manager AI는 세그먼트 내부만 관리.
 
 [태스크 번호]
 - 태스크 번호는 company_state.json의 taskCounter를 이어서 부여.
@@ -205,7 +215,7 @@ doc/
  ├─ info.txt                   : 본 시스템 명세서 (현재 파일)
  ├─ PRD.md                     : 프로젝트 요구사항 문서 (Boss AI 참조)
  ├─ CHANGE_REQUEST.md          : 변경 요청 문서 (/complainProject 작성, /changeStart 참조)
- ├─ AI_list.txt                : 현재 AI 명단 (HR AI 작성, Boss AI 읽기 전용)
+ ├─ AI_list.txt                : 현재 AI 명단 (Manager AI 작성, Boss AI 읽기 전용)
  ├─ AI_anomaly.txt             : 비정상 자원 소모 기록 (Monitoring AI 작성)
  └─ Coding_Rule.txt            : 개발 시 준수 코드 스타일 및 규칙
 develope/                      : AI가 생성한 소스 코드 저장 공간
@@ -230,7 +240,7 @@ Boss AI: git clone [url] → add/installed/[name]/
       (포함 항목: name, version, commands, mainAI, subAI, requires)
   → add/registry.json에 등록 (status: "active")
   → extension.json에 mainAI 정의된 경우:
-       HR AI → AI_list.txt에 해당 Main AI 항목 추가
+       Manager AI → AI_list.txt에 해당 Main AI 항목 추가
   → 유저에게 설치 완료 및 신규 명령어 목록 보고
 
 [오류 처리]
@@ -248,7 +258,7 @@ Boss AI: add/registry.json에서 [name] 확인
   → add/installed/[name]/ 폴더 삭제
   → add/registry.json에서 항목 제거
   → extension.json에 mainAI 정의된 경우:
-       HR AI → AI_list.txt에서 해당 Main AI 항목 제거
+       Manager AI → AI_list.txt에서 해당 Main AI 항목 제거
   → 유저에게 제거 완료 및 비활성화된 명령어 목록 보고
 
 [오류 처리]

@@ -61,7 +61,7 @@ Last Update: 2026-05-22 14:32 UTC
 ### Added
 - Initial project setup
 - PRD analysis workflow
-- HR AI generation logic
+- Manager AI generation logic
 
 ### Fixed
 - Team limit validation logic
@@ -82,7 +82,7 @@ Last Update: 2026-05-22 14:32 UTC
 - Complete Kafka extension
 - Add Redis extension
 - Improve monitoring dashboard
-- Implement Secretary AI delegation
+- Implement extension framework
 
 ---
 
@@ -91,7 +91,7 @@ Last Update: 2026-05-22 14:32 UTC
 | AI | Activity |
 |---|---|
 | Boss AI | Task distribution |
-| HR AI | AI lifecycle management |
+| Manager AI | AI lifecycle management |
 | Monitoring AI | Runtime monitoring |
 | Collector AI | Report integration |
 | Developer AI-01 | Backend implementation |

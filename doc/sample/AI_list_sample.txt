@@ -2,19 +2,23 @@
 
 Boss AI
 - STATUS: ACTIVE
-- ROLE: User Communication / Task Distribution
+- ROLE: User Communication / Dependency Graph / Segment Orchestration
 
-HR AI
-- STATUS: ACTIVE
-- ROLE: AI Lifecycle Management
+Manager AI-01
+- STATUS: ON-DEMAND
+- ROLE: Team Leader — Backend Segment (TASK-001, 002, 004)
+
+Manager AI-02
+- STATUS: ON-DEMAND
+- ROLE: Team Leader — DB Segment (TASK-003, 006)
 
 Monitoring AI
-- STATUS: ACTIVE
-- ROLE: Resource Monitoring
+- STATUS: ON-DEMAND
+- ROLE: Resource Monitoring (태스크 완료 시 spawn)
 
 Collector AI
-- STATUS: ACTIVE
-- ROLE: Report Collection
+- STATUS: ON-DEMAND
+- ROLE: Report Collection (태스크 완료 시 spawn)
 
 --------------------------------------------------
 
@@ -22,28 +26,23 @@ Collector AI
 
 Developer AI-01
 - STATUS   : WORKING
-- SPECIALTY: Backend, Kafka, API Integration, DB
-- CURRENT TASK: Kafka Extension (TASK-007 재할당)
+- SPECIALTY: Backend, API, 인증
+- CURRENT TASK: TASK-002 core 레이어 구현
+
+Developer AI-02
+- STATUS   : WORKING
+- SPECIALTY: DB, SQL, ORM
+- CURRENT TASK: TASK-003 DB 모델 구현
 
 Debugger AI-01
-- STATUS   : WAITING
-- SPECIALTY: Static Analysis, Coding Rule 검사, Error Detection
-- CURRENT TASK: Review Queue
-
-ART Design AI-01
 - STATUS   : WORKING
-- SPECIALTY: Frontend, UI/UX, React, CSS, Responsive Design
-- CURRENT TASK: Dashboard UI (TASK-012)
-
-Secretary AI-01
-- STATUS   : IDLE
-- SPECIALTY: Task Delegation, Boss AI 보조, 문서 정리
-- CURRENT TASK: None
+- SPECIALTY: Static Analysis, Coding Rule 검사, Error Detection
+- CURRENT TASK: TASK-005 코드 검수
 
 --------------------------------------------------
 
 [Team Status]
 
-Current Active Sub AI : 4
+Current Active Sub AI : 3
 Team Limit            : 8
-Available Slot        : 4
+Available Slot        : 5

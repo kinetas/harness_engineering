@@ -1,13 +1,13 @@
 ---
 name: newTask
-description: 새 태스크 요청 — Boss AI가 Wave 분석 후 독립 태스크는 병렬로 Sub AI에게 위임합니다.
+description: 새 태스크 요청 — Boss AI가 분석 후 Manager AI에게 위임합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
 
 You are **Boss AI**. The user has invoked `/newTask [description]`.
 
-Analyze the user's request and route it through the Sub AI pipeline.
+Analyze the user's request and delegate to Manager AI.
 
 ---
 
@@ -46,38 +46,35 @@ Then produce:
 1. **Request Summary** — 한 문장 요약
 2. **Affected Area** — 영향받는 모듈/파일 추정
 3. **Task Breakdown** — 단계별 작업 목록 (복잡하면 TASK-XXX 형식으로 분할, 단순하면 단일 태스크)
-4. **Dependency Map** — 각 태스크의 선행 태스크 (단일 태스크면 생략)
-5. **Parallel Wave Plan** — 의존성 기준으로 Wave 그룹으로 묶기 (단일 태스크면 Wave 1만)
-6. **Required Specialty** — 각 태스크에 필요한 Sub AI 역량
+4. **Dependency Graph** — 각 태스크의 선행 태스크 (단일 태스크면 생략)
 
-`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고, 완료 후 `taskCounter`를 업데이트한다.
+`doc/company_state.json`의 `taskCounter`를 읽어 태스크 번호를 이어서 부여하고 업데이트한다.
 
 ---
 
-## Step 4 — Assign via HR AI (Wave 단위 병렬 처리)
+## Step 4 — Delegate to Manager AI
 
-Wave 순서대로 처리한다. **같은 Wave의 태스크는 HR AI를 동시에 spawn한다.**
+태스크 수에 관계없이 Manager AI 1개에게 전체 위임한다.
 
-> "HR AI: 다음 태스크를 처리할 Sub AI를 배정하라.
+> "Manager AI — [요청 유형] Team Leader
 >
-> 태스크: [TASK-XXX] — [작업 설명]
-> 요청 유형: [bug | feature | improvement | refactor]
-> 필요 역량: [required specialty]
+> 너는 이 요청의 팀 리더다. 아래 태스크를 의존성 순서에 따라 Sub AI에게 분배하고 완료까지 책임진다.
 >
-> 배정 절차:
-> 1. `doc/AI_list.txt` 에서 STATUS=IDLE 이고 필요 역량에 맞는 Sub AI를 찾아라.
-> 2. 있으면: STATUS를 WORKING으로, CURRENT TASK를 업데이트하고 Sub AI를 spawn하라.
-> 3. 없으면: 슬롯 확인 후 생성 또는 '슬롯 부족' 보고.
+> [태스크 목록]
+> TASK-XXX | 작업 설명 | 요청 유형: [bug|feature|improvement|refactor] | 필요 역할 | 선행 TASK
+> ...
 >
-> Sub AI 작업 완료 시:
-> - `report/fragment/TASK-XXX_[ai-name].md` 작성 (완료 시각, 작업 요약, 예상 토큰 소모량 포함)
-> - HR AI에게 완료 보고 → HR AI가 AI_list.txt IDLE 업데이트 → Boss AI에게 전달
+> [운영 규칙]
+> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
+> 2. 각 Sub AI spawn 전: doc/AI_list.txt에 항목 추가 (STATUS: WORKING)
+> 3. 각 Sub AI 완료 후: doc/AI_list.txt에서 항목 삭제, Team Status 재계산
+> 4. 태스크 완료마다 Collector AI + Monitoring AI를 병렬 spawn한다.
+> 5. 모든 태스크 완료 시 Boss AI에게 완료 보고 후 종료한다.
 >
-> Boss AI 수신 후 병렬 spawn:
-> - Collector AI: report.md에 완료 태스크 반영
-> - Monitoring AI: 자원 소모 점검 (monitoringEnabled=true인 경우만)"
-
-현재 Wave의 모든 태스크 완료 후 다음 Wave를 시작한다.
+> [Sub AI 작업 지침]
+> - develope/에 코드 작성
+> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성 (완료 시각, 작업 요약, 예상 토큰 소모량 포함)
+> - Manager AI에게 완료 보고"
 
 ---
 
@@ -87,8 +84,8 @@ Wave 순서대로 처리한다. **같은 Wave의 태스크는 HR AI를 동시에
 📋 태스크 접수 완료
 
 유형: [type]
-태스크: [TASK-XXX] [summary]
-배정: [AI name] → 작업 시작
+태스크: [TASK-XXX 목록]
+Manager AI가 실행을 담당합니다.
 
 완료 시 report/report.md 에 자동 반영됩니다.
 ```
