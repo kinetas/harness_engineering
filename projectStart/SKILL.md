@@ -113,56 +113,83 @@ Manager AI spawn 전 Boss AI가 직접 수행:
 
 > "Manager AI [N] — [segment_id] Bounded Context Coordinator
 >
-> 너는 이 세그먼트의 경계를 소유한 코디네이터다.
-> 아래 태스크와 파일을 전담하며, 다른 세그먼트의 파일은 절대 수정하지 않는다.
+> 너는 이 세그먼트의 팀 리더다. 아래 3가지만 수행한다:
+> 1. 세그먼트 내 태스크 의존성을 분석하여 최적 병렬 실행 계획을 수립한다.
+> 2. 계획에 따라 Agent 툴로 Sub AI를 spawn한다.
+> 3. 모든 Sub AI 결과를 수집하여 exports와 함께 Boss AI에게 완료 보고 후 종료한다.
+>
+> 직접 코드를 작성하지 않는다. file_ownership 경로 외의 파일은 절대 수정하지 않는다.
+> Monitoring AI / Collector AI는 신경 쓰지 않는다.
 >
 > [Dependency Contract]
 > - segment_id: [segment_id]
-> - file_ownership: [파일/폴더 목록] — 이 경로만 수정 가능
-> - imports: [다른 세그먼트로부터 받은 결과물 목록]
-> - exports: [이 세그먼트가 완료 시 제공할 결과물 목록]
+> - file_ownership: [파일/폴더 목록] — 이 경로만 수정 가능 (Sub AI에게도 전달)
+> - imports: [다른 세그먼트로부터 받은 결과물]
+> - exports: [이 세그먼트가 완료 시 생산할 결과물]
 >
 > [담당 태스크 (내부 의존성 포함)]
 > TASK-XXX | 작업 설명 | 필요 역할 | 내부 선행 TASK
 > ...
 >
-> [운영 규칙]
-> 0. 시작 전 doc/company_state.json에서 collectorMode와 monitoringEnabled를 확인한다.
-> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
-> 2. 각 Sub AI spawn 전: doc/AI_list.txt에서 자신의 세그먼트 항목 Sub AI 카운트 +1.
->    Sub AI 카운트가 subAILimit 이상이면 spawn 보류, 완료된 Sub AI 슬롯 확보 후 즉시 시작.
->    타 세그먼트 항목은 절대 수정하지 않는다.
-> 3. 각 Sub AI 완료 후: 자신의 세그먼트 항목 Sub AI 카운트 -1.
-> 4. 태스크 완료마다:
->    - monitoringEnabled=true이면: "Monitoring AI: TASK-XXX 자원 소모 점검."
->    - collectorMode=3이면: "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
-> 5. 세그먼트 완료 시:
->    - collectorMode=1이면: "Collector AI: [segment_id] 세그먼트 완료. fragment를 읽고 report.md에 반영하라." spawn 후 Boss AI에게 보고
->    - collectorMode=2이면: Collector AI 없이 즉시 Boss AI에게 보고
->    - collectorMode=3이면: 즉시 Boss AI에게 보고 (태스크마다 이미 반영됨)
->    - exports 결과물 목록과 함께 Boss AI에게 보고 후 종료한다.
+> --- STEP 1: 실행 계획 수립 ---
+> 내부 의존성(내부 선행 TASK)으로 실행 레이어를 구성한다:
+>   Layer 1: 선행 없는 태스크들 → 즉시 병렬 spawn 가능
+>   Layer 2: Layer 1 완료 후 가능한 태스크들
+>   ...
+> 같은 레이어 안에서 최대한 병렬로 처리한다.
 >
-> [Sub AI 작업 지침]
-> - 담당 file_ownership 경로에만 코드 작성
-> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성
+> --- STEP 2: Sub AI spawn (Agent 툴 호출) ---
+> 병렬: 같은 레이어 태스크 → 단일 응답에서 Agent 툴 동시 다중 호출.
+> 직렬: 다음 레이어 → 이전 레이어 Agent 결과 모두 수신 후 호출.
+>
+> Agent 호출 전: doc/AI_list.txt 자신의 세그먼트 항목 Sub AI 카운트 +1.
+>   (subAILimit 이상이면 슬롯 확보 후 시작. 타 세그먼트 항목 절대 수정 금지)
+> Agent 결과 수신 후: 자신의 세그먼트 항목 Sub AI 카운트 -1.
+>
+> [Sub AI 프롬프트 템플릿]
+> 아래 형식으로 각 Sub AI의 Agent prompt를 작성한다:
+>
+>   '너는 [역할명] Sub AI다. 아래 태스크를 완료하고 결과를 반환하라.
+>
+>   [태스크]
+>   TASK-XXX: [작업 설명]
+>
+>   [참고 파일 — 작업 전 반드시 읽어라]
+>   - doc/PRD.md
+>   - doc/Coding_Rule.txt (있는 경우)
+>
+>   [코드 작성 경로]
+>   [file_ownership 경로] 하위에만 작성 (다른 경로 절대 수정 금지)
+>
+>   [보고서 작성]
+>   report/fragment/TASK-XXX_[역할명].md
 >   (포함: 완료 시각, 작업 요약, 주요 결정사항, 생성/수정 파일 목록, 예상 토큰 소모량(대/중/소))
-> - Manager AI에게 완료 보고
 >
-> Manager AI는 직접 코드를 작성하지 않는다. Sub AI에게만 위임한다."
+>   완료 후 결과를 반환하라.'
+>   (반환 결과는 자동으로 Manager AI에게 전달된다. Boss AI에게 직접 보고하지 않는다.)
+>
+> --- STEP 3: 완료 보고 ---
+> 모든 레이어의 Agent 결과를 수신하면 Boss AI에게 아래 내용으로 보고 후 종료한다:
+>   세그먼트: [segment_id] 완료
+>   완료 태스크: [TASK-XXX 목록]
+>   exports: [결과물 목록]
+>   이슈: [있으면 기술, 없으면 없음]"
 
 ### 세그먼트 완료 후 처리
 
-세그먼트 완료 보고를 받으면:
-- exports 결과물을 의존성 계약에 반영
-- 해당 exports를 imports로 가진 세그먼트의 준비 여부 확인
-- 준비된 세그먼트가 있으면 즉시 Manager AI spawn
-
 세그먼트 완료 보고를 받으면 Boss AI가 직접 수행:
-- `doc/AI_list.txt` `[Status]`에서 해당 세그먼트 항목 삭제
-- Active Managers -1, Available Managers +1 업데이트
+1. `doc/AI_list.txt` `[Status]`에서 해당 세그먼트 항목 삭제
+2. Active Managers -1, Available Managers +1 업데이트
+3. `doc/company_state.json`에서 monitoringEnabled와 collectorMode 확인:
+   - monitoringEnabled=true이면: Agent 툴로 Monitoring AI spawn
+     > "Monitoring AI: [segment_id] 세그먼트 완료. 자원 소모를 점검하라. report/fragment/ 를 읽어라."
+   - collectorMode=1 또는 3이면: Agent 툴로 Collector AI spawn
+     > "Collector AI: [segment_id] 세그먼트 완료. report/fragment/ 를 읽고 report.md에 반영하라."
+4. exports 결과물을 의존성 계약에 반영
+5. 해당 exports를 imports로 가진 세그먼트의 준비 여부 확인 → 준비된 세그먼트 즉시 Manager AI spawn
 
 모든 세그먼트가 완료되면:
-- collectorMode=2이면: Collector AI 1회 spawn
+- collectorMode=2이면: Agent 툴로 Collector AI 1회 spawn
   > "Collector AI: 프로젝트 완료. 모든 fragment를 읽고 report.md를 최종 업데이트하라."
 
 ---

@@ -63,33 +63,67 @@ Manager AI spawn 전 Boss AI가 직접 수행:
 Manager AI 완료 보고 수신 후 Boss AI가 직접 수행:
 1. `doc/AI_list.txt` `[Status]`에서 해당 항목 삭제
 2. Active Managers -1, Available Managers +1 업데이트
+3. `doc/company_state.json`에서 monitoringEnabled와 collectorMode 확인:
+   - monitoringEnabled=true이면: Agent 툴로 Monitoring AI spawn
+     > "Monitoring AI: 완료된 태스크들의 자원 소모를 점검하라. report/fragment/ 를 읽어라."
+   - collectorMode=1 또는 2이면: Agent 툴로 Collector AI spawn
+     > "Collector AI: 태스크 완료. report/fragment/ 를 읽고 report.md에 반영하라."
 
 > "Manager AI — [요청 유형] Team Leader
 >
-> 너는 이 요청의 팀 리더다. 아래 태스크를 의존성 순서에 따라 Sub AI에게 분배하고 완료까지 책임진다.
+> 너는 이 요청의 팀 리더다. 아래 3가지만 수행한다:
+> 1. 받은 태스크들의 의존성을 분석하여 최적 병렬 실행 계획을 수립한다.
+> 2. 계획에 따라 Agent 툴로 Sub AI를 spawn한다.
+> 3. 모든 Sub AI 결과를 수집하여 Boss AI에게 완료 보고 후 종료한다.
+>
+> 직접 코드를 작성하지 않는다. Monitoring AI / Collector AI는 신경 쓰지 않는다.
 >
 > [태스크 목록]
 > TASK-XXX | 작업 설명 | 요청 유형: [bug|feature|improvement|refactor] | 필요 역할 | 선행 TASK
 > ...
 >
-> [운영 규칙]
-> 0. 시작 전 doc/company_state.json에서 collectorMode와 monitoringEnabled를 확인한다.
-> 1. 내부 의존성 기반으로 배치를 구성하고 Sub AI를 병렬 spawn한다.
-> 2. 각 Sub AI spawn 전: doc/AI_list.txt에서 자신의 항목 Sub AI 카운트 +1.
->    Sub AI 카운트가 subAILimit 이상이면 spawn 보류, 완료된 슬롯 확보 후 즉시 시작.
-> 3. 각 Sub AI 완료 후: 자신의 항목 Sub AI 카운트 -1.
-> 4. 태스크 완료마다:
->    - monitoringEnabled=true이면: "Monitoring AI: TASK-XXX 자원 소모 점검."
->    - collectorMode=3이면: "Collector AI: TASK-XXX 완료. fragment를 읽고 report.md에 반영하라."
-> 5. 모든 태스크 완료 시:
->    - collectorMode=1 또는 2이면: "Collector AI: 태스크 완료. fragment를 읽고 report.md에 반영하라." spawn 후 Boss AI에게 보고
->    - collectorMode=3이면: 즉시 Boss AI에게 보고 (태스크마다 이미 반영됨)
->    - Boss AI에게 완료 보고 후 종료한다.
+> --- STEP 1: 실행 계획 수립 ---
+> 태스크 의존성(선행 TASK)으로 실행 레이어를 구성한다:
+>   Layer 1: 선행 없는 태스크들 → 즉시 병렬 spawn 가능
+>   Layer 2: Layer 1 완료 후 가능한 태스크들
+>   ...
+> 같은 레이어 안에서 최대한 병렬로 처리한다.
 >
-> [Sub AI 작업 지침]
-> - develope/에 코드 작성
-> - report/fragment/TASK-XXX_[ai-name].md 보고서 작성 (완료 시각, 작업 요약, 예상 토큰 소모량 포함)
-> - Manager AI에게 완료 보고"
+> --- STEP 2: Sub AI spawn (Agent 툴 호출) ---
+> 병렬: 같은 레이어 태스크 → 단일 응답에서 Agent 툴 동시 다중 호출.
+> 직렬: 다음 레이어 → 이전 레이어 Agent 결과 모두 수신 후 호출.
+>
+> Agent 호출 전: doc/AI_list.txt 자신의 항목 Sub AI 카운트 +1.
+>   (subAILimit 이상이면 슬롯 확보 후 시작)
+> Agent 결과 수신 후: 자신의 항목 Sub AI 카운트 -1.
+>
+> [Sub AI 프롬프트 템플릿]
+> 아래 형식으로 각 Sub AI의 Agent prompt를 작성한다:
+>
+>   '너는 [역할명] Sub AI다. 아래 태스크를 완료하고 결과를 반환하라.
+>
+>   [태스크]
+>   TASK-XXX: [작업 설명]
+>   요청 유형: [bug|feature|improvement|refactor]
+>
+>   [참고 파일 — 작업 전 반드시 읽어라]
+>   - doc/PRD.md
+>   - doc/Coding_Rule.txt (있는 경우)
+>
+>   [코드 작성 경로]
+>   develope/ 하위
+>
+>   [보고서 작성]
+>   report/fragment/TASK-XXX_[역할명].md
+>   (포함: 완료 시각, 작업 요약, 생성/수정 파일 목록, 예상 토큰 소모량(대/중/소))
+>
+>   완료 후 결과를 반환하라.'
+>   (반환 결과는 자동으로 Manager AI에게 전달된다. Boss AI에게 직접 보고하지 않는다.)
+>
+> --- STEP 3: 완료 보고 ---
+> 모든 레이어의 Agent 결과를 수신하면 Boss AI에게 아래 내용으로 보고 후 종료한다:
+>   완료 태스크: [TASK-XXX 목록]
+>   이슈: [있으면 기술, 없으면 없음]"
 
 ---
 
