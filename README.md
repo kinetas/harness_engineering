@@ -22,7 +22,7 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 | 스킬 | 설명 |
 |---|---|
 | `/projectStart` | PRD 분석 후 전체 프로젝트 시작 — DAG 기반 세그먼트 분할 후 Manager AI 병렬 위임 |
-| `/newTask [요청]` | 개별 태스크 요청 — Boss AI가 의존성 분석 후 Manager AI에게 위임 |
+| `/newTask [요청]` | 새 작업 요청 — 단순 요청은 Manager AI 1개, 복잡한 요청은 DAG 기반 세그먼트 분할 후 Manager AI 병렬 위임 |
 | `/bossMode [on\|off]` | Boss AI 상시 모드 토글 — on 시 유저 입력 자동 인터셉트 |
 | `/complainProject` | 변경 요청 마법사 — 개선/수정 사항을 대화형으로 수집하여 CHANGE_REQUEST.md 작성 및 PRD 업데이트 |
 | `/changeStart` | 변경 개발 시작 — CHANGE_REQUEST.md 기반 DAG 분석 후 Manager AI 병렬 위임 |
@@ -182,7 +182,7 @@ PRD.md 작성
 
 #### DAG 기반 세그먼트 분할 (4단계 알고리즘)
 
-`/projectStart`와 `/changeStart` 실행 시 Boss AI가 아래 순서로 세그먼트를 구성합니다.
+`/projectStart`, `/changeStart`, `/newTask`(복잡한 요청) 실행 시 Boss AI가 아래 순서로 세그먼트를 구성합니다.
 
 ```
 STEP 1 — DAG 생성
