@@ -130,6 +130,127 @@ git clone --single-branch --depth 1 https://github.com/kinetas/harness_engineeri
 
 ---
 
+## AI 아키텍처
+
+### 개요
+
+Harness Engineering은 **Boss AI를 중심으로 한 계층형 멀티 에이전트 시스템**입니다.
+유저의 요청이 들어오면 Boss AI가 작업을 분해하고, Manager AI와 Sub AI를 동적으로 생성(spawn)하여 병렬로 개발을 진행합니다.
+
+```
+유저
+ │
+ ▼
+Boss AI ─────── (상시 가동, 유일한 대화 창구)
+ │
+ ├── Manager AI-1  (세그먼트 A 전담, On-Demand)
+ │    ├── Sub AI   (TASK-001 코드 작성)
+ │    ├── Sub AI   (TASK-002 코드 작성)
+ │    └── Sub AI   (TASK-003 코드 작성)
+ │
+ ├── Manager AI-2  (세그먼트 B 전담, On-Demand)
+ │    ├── Sub AI   (TASK-004 코드 작성)
+ │    └── Sub AI   (TASK-005 코드 작성)
+ │
+ ├── Monitoring AI (태스크 완료 시 자원 점검, On-Demand)
+ └── Collector AI  (보고서 취합, On-Demand)
+```
+
+---
+
+### AI 역할 분담
+
+| AI | 수명 | 역할 |
+|---|---|---|
+| **Boss AI** | 상시 | 유저 소통, DAG 생성, 세그먼트 분할, Manager AI 조율 |
+| **Manager AI** | On-Demand | 세그먼트(Bounded Context) 소유, Sub AI 배분 및 완료 집계 |
+| **Sub AI** | On-Demand | 단일 태스크 실행 (코드 작성 + fragment 보고서 작성) |
+| **Monitoring AI** | On-Demand | 태스크 완료 후 토큰 소모·오류 반복·범위 초과 점검 |
+| **Collector AI** | On-Demand | fragment 보고서를 읽어 `report/report.md` 업데이트 |
+| **Debugger AI** | On-Demand | `/adjustCodingRule` 호출 시 Coding_Rule.txt 기준 코드 검수 |
+
+---
+
+### 프로젝트 실행 흐름
+
+```
+/createCompany   →  워크스페이스 폴더 구조 생성
+/startCompany    →  company_state.json + AI_list.txt 초기화
+PRD.md 작성
+/projectStart    →  DAG 생성 → 세그먼트 분할 → Manager AI 병렬 spawn
+```
+
+#### DAG 기반 세그먼트 분할 (4단계 알고리즘)
+
+`/projectStart`와 `/changeStart` 실행 시 Boss AI가 아래 순서로 세그먼트를 구성합니다.
+
+```
+STEP 1 — DAG 생성
+  PRD의 각 기능을 태스크 노드로, 선행 관계를 방향 엣지로 표현
+
+STEP 2 — Topological Layering (BFS)
+  Layer 1: 선행 태스크가 없는 루트 노드
+  Layer N: 모든 선행 태스크가 Layer N-1 이하
+
+STEP 3 — Domain Clustering
+  같은 레이어 내에서 backend / frontend / infra / testing 도메인별 클러스터링
+  ※ File Ownership 원칙: 같은 파일을 수정하는 태스크는 반드시 같은 세그먼트
+
+STEP 4 — Segment + Dependency Contract 생성
+  각 세그먼트에 imports(선행 결과물) / exports(제공 결과물) 계약 명시
+```
+
+#### 세그먼트 실행 규칙
+
+- `imports`가 없는 세그먼트 → 즉시 Manager AI spawn (병렬 가능)
+- `imports`가 있는 세그먼트 → 해당 `exports` 완료 후 spawn
+- Manager AI는 `managerLimit`(기본 3) 슬롯 범위 내에서 동시 실행
+- Sub AI는 Manager당 `subAILimit`(기본 4) 슬롯 범위 내에서 병렬 실행
+
+---
+
+### 상태 관리 파일
+
+모든 AI는 아래 파일을 통해 상태를 공유합니다.
+
+| 파일 | 역할 |
+|---|---|
+| `doc/company_state.json` | 시스템 설정 (limit, 모드, 카운터) |
+| `doc/AI_list.txt` | 현재 활성 Manager·Sub AI 슬롯 현황 |
+| `doc/AI_anomaly.txt` | Monitoring AI가 기록하는 이상 로그 |
+| `report/fragment/` | 각 Sub AI가 완료 후 작성하는 태스크 보고서 |
+| `report/report.md` | Collector AI가 fragment를 취합해 업데이트하는 최종 보고서 |
+
+**쓰기 규칙** — 충돌 방지를 위한 엄격한 소유권 분리:
+- `AI_list.txt` 전체 구조 변경 → Boss AI만 가능
+- 자신의 세그먼트 Sub AI 카운트 수정 → 해당 Manager AI만 가능
+- `develope/` 내 코드 작성 → 세그먼트별 `file_ownership` 경로에 한정
+
+---
+
+### Collector AI 동작 모드
+
+`company_state.json`의 `collectorMode` 값으로 보고서 갱신 시점을 조정합니다.
+
+| 모드 | 갱신 시점 | 특징 |
+|---|---|---|
+| `1` (기본) | 세그먼트 완료 시 | 균형적 — 세그먼트 단위로 report.md 갱신 |
+| `2` | 프로젝트 완료 시 1회 | 토큰 절약 최대화 |
+| `3` | 태스크 완료마다 | 가장 실시간, 토큰 소모 많음 |
+
+---
+
+### Boss Mode
+
+`/bossMode on` 활성화 시 유저의 모든 입력을 Boss AI가 자동으로 분류합니다.
+
+```
+작업 요청 (만들어, 추가해, 고쳐, 버그…) → Manager AI → Sub AI 파이프라인
+상태 질문 / 코드 설명 / /skill 명령어  → Boss AI 직접 답변
+```
+
+---
+
 ## 빌드
 
 `build.js`가 `SKILL.md.tmpl` → `SKILL.md` 변환을 담당합니다.
