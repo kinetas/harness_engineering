@@ -1,6 +1,6 @@
 ---
 name: setupDoc
-description: 대화형 문서 설정 — PRD와 Coding Rule을 질문-응답 방식으로 대화하며 작성합니다.
+description: 대화형 문서 설정 — PRD, Coding Rule, DB 설계 문서를 질문-응답 방식으로 대화하며 작성합니다.
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: node build.js -->
@@ -31,7 +31,8 @@ Ask the user:
 >
 > **1.** PRD (프로젝트 요구사항 문서)
 > **2.** Coding Rule (코딩 규칙)
-> **3.** 둘 다 (PRD → Coding Rule 순서로 진행)
+> **3.** DB 설계 문서 (db.md)
+> **4.** 모두 (PRD → Coding Rule → DB 설계 순서로 진행)
 
 Wait for the answer, then proceed to the corresponding flow(s).
 
@@ -245,6 +246,164 @@ Preserve the standard section structure (1~10번 섹션). Replace or augment nam
 
 ---
 
+## Flow C — DB 설계 문서 설정
+
+Check if `doc/db.md` exists. If not, tell the user to run `/createCompany` first and stop.
+
+Collect answers section by section. After all answers are collected, generate the file.
+
+### C-1. 페이지 구성
+1. "앱에 어떤 페이지들이 있나요? (예: 홈, 로그인, 마이페이지, 대시보드 등)"
+2. "각 페이지 중 로그인(인증)이 필요한 페이지는 어느 것인가요?"
+
+### C-2. 필요 기능
+3. "구현할 기능 목록을 나열해주세요. (예: 회원가입, 게시글 CRUD, 댓글, 알림 등)"
+4. "각 기능에서 DB에서 읽기/쓰기/삭제가 필요한 데이터는 무엇인가요? 기능별로 간단히 설명해주세요."
+
+### C-3. 엔티티 구성
+5. "필요한 테이블(엔티티)을 나열해주세요. (예: User, Post, Comment, Tag 등)"
+6. "각 엔티티의 주요 컬럼을 설명해주세요. (id, created_at, updated_at 은 기본 포함됩니다)"
+7. "엔티티 간의 관계를 설명해주세요. (예: User 1:N Post, Post N:M Tag 등)"
+
+### C-4. 외부 API
+8. "외부 API를 사용할 계획이 있나요? (예: 소셜 로그인, 결제, SMS, 지도 API 등 / 없으면 '없음')"
+
+### C-5. 인증 & 권한
+9. "인증 방식은 무엇을 사용할 계획인가요? (JWT / Session / OAuth2 / 미정)"
+10. "사용자 역할(권한 레벨)이 있나요? (예: 관리자, 일반 사용자, 비회원 등)"
+
+### C-6. 성능 & 보안
+11. "자주 조회될 것으로 예상되는 컬럼이나 조건이 있나요? (인덱스 후보 — 예: user_id, status 등 / 모르면 '미정')"
+12. "테이블별 예상 데이터 규모가 있나요? (예: User 1만 건, Post 10만 건 / 모르면 '미정')"
+13. "암호화가 필요한 민감 데이터가 있나요? (예: 비밀번호, 주민번호, 카드번호 / 없으면 '없음')"
+
+### C-7. 마이그레이션
+14. "초기 시드 데이터가 필요한가요? (예: 기본 카테고리, 관리자 계정 등 / 없으면 '없음')"
+
+### C — Write db.md
+
+After collecting all answers, write `doc/db.md` using the template structure below.
+Fill in every section with the collected answers. Do NOT leave placeholder text.
+For unanswered optional items write `(미정)` or `(없음)`.
+Infer reasonable details from context where the user gave brief answers.
+
+```markdown
+# Database Design Document
+
+---
+
+# 페이지 구성
+
+| 페이지명 | URL 경로 | 설명 | 인증 필요 |
+|---|---|---|---|
+[답변에서 행 추출 — URL 경로는 답변 기반으로 추론]
+
+---
+
+# 필요 기능
+
+## 기능 목록
+
+[답변에서 체크리스트 형식으로 작성]
+
+## 기능별 데이터 요구사항
+
+[각 기능별로 ### 기능명 / - 읽기 / - 쓰기 / - 삭제 형식으로 작성]
+
+---
+
+# 전체 엔티티 구성
+
+## 엔티티 목록
+
+| 엔티티명 | 테이블명 | 설명 |
+|---|---|---|
+[답변에서 행 추출 — 테이블명은 snake_case로 추론]
+
+## 엔티티 상세
+
+[각 엔티티별로 ### 엔티티명 + 컬럼 테이블 작성. id/created_at/updated_at 항상 포함]
+
+## 관계도 (ERD 요약)
+
+```
+[답변에서 추출한 관계를 1──* / *──1 / *──* 형식으로 작성]
+```
+
+---
+
+# 외부 API 사용 목록
+
+| API 이름 | 용도 | 연동 엔티티 | 비고 |
+|---|---|---|---|
+[답변에서 추출. 없으면 "(없음)" 한 줄]
+
+---
+
+# 인증 / 권한 설계
+
+## 인증 방식
+
+[선택된 방식 체크박스 표시]
+
+## 권한 레벨
+
+| 역할 | 권한 범위 |
+|---|---|
+[답변에서 추출]
+
+---
+
+# 인덱스 전략
+
+| 테이블 | 인덱스 컬럼 | 인덱스 타입 | 이유 |
+|---|---|---|---|
+[답변 기반 추론. 외래키, 자주 조회 컬럼 포함]
+
+---
+
+# 데이터 흐름
+
+## 주요 시나리오별 흐름
+
+[핵심 기능 2~3개를 골라 ### 시나리오: 기능명 + 단계별 흐름 작성]
+
+---
+
+# 마이그레이션 계획
+
+## 초기 시드 데이터
+
+[답변에서 추출한 체크리스트]
+
+## 스키마 변경 정책
+
+(마이그레이션 파일 기반 관리 권장)
+
+---
+
+# 보안 고려사항
+
+[답변 기반으로 체크리스트 작성. 민감 데이터 암호화, SQL Injection 방지 항상 포함]
+
+---
+
+# 성능 고려사항
+
+## 예상 데이터 규모
+
+| 테이블 | 예상 레코드 수 | 증가율 |
+|---|---|---|
+[답변에서 추출]
+
+## 캐싱 전략
+
+- [ ] Redis 캐시 대상: (추후 결정)
+- [ ] 캐시 TTL: (추후 결정)
+```
+
+---
+
 ## Final Step — Confirm & Complete
 
 After completing the chosen flow(s):
@@ -258,6 +417,7 @@ After completing the chosen flow(s):
 [생성/업데이트된 파일 목록]
 
 다음 단계:
-- PRD나 Coding Rule을 추가로 수정하려면 해당 파일을 직접 편집하세요.
+- 문서를 추가로 수정하려면 해당 파일을 직접 편집하세요.
+- DB 설계 문서(db.md)는 개발 진행 중 엔티티가 추가될 때마다 업데이트하세요.
 - /projectStart 로 프로젝트를 시작하세요.
 ```
